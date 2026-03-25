@@ -40,3 +40,30 @@ __screenshots__/
 
 test-results/
 playwright-report/
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Optional future-proof ignores
+*.pem
+*.key
+*.crt
+*.p12
+
+uploads/
+tmp/
+
+.cache/
+.turbo/
+.pnpm-store/
+
+*.sqlite
+*.sqlite3
+*.db
+
+.nyc_output/
+
+.vercel/
+.netlify/
