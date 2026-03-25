@@ -32,7 +32,7 @@ const historyVotes = ref([
           </div>
           <div class="flex items-center gap-4">
             <div class="flex items-center gap-2 text-slate-300 hover:text-white transition-colors cursor-pointer p-2 rounded-lg hover:bg-slate-700/50">
-              <span class="text-sm font-medium hidden sm:block">Juan Pérez</span>
+              <span class="text-sm font-medium hidden sm:block">Alexis Martinez</span>
               <UserCircle class="w-7 h-7 text-emerald-500" />
             </div>
             <div class="w-px h-6 bg-slate-700"></div>
@@ -46,7 +46,7 @@ const historyVotes = ref([
 
     <!-- Main Content -->
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-10">
-      
+
       <!-- Section: Votaciones Activas -->
       <section>
         <div class="mb-6 flex flex-col sm:flex-row sm:items-baseline justify-between gap-2">
@@ -56,10 +56,10 @@ const historyVotes = ref([
           </h2>
           <span class="text-sm font-medium text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">{{ activeVotes.length }} procesos abiertos</span>
         </div>
-        
+
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <VotingCard 
-            v-for="vote in activeVotes" 
+          <VotingCard
+            v-for="vote in activeVotes"
             :key="vote.id"
             :id="vote.id"
             :title="vote.title"
@@ -72,7 +72,7 @@ const historyVotes = ref([
       <!-- Section: Mi Historial -->
       <section>
         <h2 class="text-2xl font-bold text-white tracking-tight mb-6">Mi Historial</h2>
-        
+
         <div class="bg-slate-800 rounded-xl border border-slate-700/50 overflow-hidden shadow-lg">
           <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-slate-700/50">
@@ -109,7 +109,7 @@ const historyVotes = ref([
           </div>
         </div>
       </section>
-      
+
     </main>
   </div>
 </template>
