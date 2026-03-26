@@ -1,12 +1,32 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import { Mail, Lock, LogIn } from 'lucide-vue-next';
+import { Mail, Lock, LogIn, Eye, EyeOff } from 'lucide-vue-next';
+import { validateEmail, validatePassword, sanitizeInput } from '../../utils/validators';
 
 const email = ref('');
 const password = ref('');
+const showPassword = ref(false);
+
+const emailError = ref<string | null>(null);
+const passwordError = ref<string | null>(null);
 
 const handleLogin = () => {
-  console.log('Login attempt with', email.value, password.value);
+  emailError.value = null;
+  passwordError.value = null;
+
+  const safeEmail = sanitizeInput(email.value);
+  const safePassword = password.value;
+
+  const emailValidationResult = validateEmail(safeEmail);
+  const passwordValidationResult = validatePassword(safePassword);
+
+  if (emailValidationResult || passwordValidationResult) {
+    emailError.value = emailValidationResult;
+    passwordError.value = passwordValidationResult;
+    return;
+  }
+
+  console.log('Login attempt with', safeEmail, safePassword);
 };
 </script>
 
@@ -30,10 +50,14 @@ const handleLogin = () => {
               v-model="email" 
               type="email" 
               required
-              class="block w-full pl-10 pr-3 py-2.5 bg-slate-900/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
+              :class="[
+                'block w-full pl-10 pr-3 py-2.5 bg-slate-900/50 border rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:border-transparent transition-all',
+                emailError ? 'border-red-500 focus:ring-red-500' : 'border-slate-700 focus:ring-emerald-500'
+              ]"
               placeholder="tu@correo.com"
             />
           </div>
+          <p v-if="emailError" class="mt-1.5 text-sm text-red-500">{{ emailError }}</p>
         </div>
 
         <div>
@@ -48,12 +72,25 @@ const handleLogin = () => {
             <input 
               id="password"
               v-model="password" 
-              type="password" 
+              :type="showPassword ? 'text' : 'password'" 
               required
-              class="block w-full pl-10 pr-3 py-2.5 bg-slate-900/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
+              :class="[
+                'block w-full pl-10 pr-10 py-2.5 bg-slate-900/50 border rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:border-transparent transition-all',
+                passwordError ? 'border-red-500 focus:ring-red-500' : 'border-slate-700 focus:ring-emerald-500'
+              ]"
               placeholder="••••••••"
             />
+            <button 
+              type="button"
+              @click="showPassword = !showPassword"
+              class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-300 transition-colors focus:outline-none"
+              tabindex="-1"
+            >
+              <Eye v-if="!showPassword" class="w-5 h-5" />
+              <EyeOff v-else class="w-5 h-5" />
+            </button>
           </div>
+          <p v-if="passwordError" class="mt-1.5 text-sm text-red-500">{{ passwordError }}</p>
         </div>
 
         <button 
