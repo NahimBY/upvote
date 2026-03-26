@@ -12,6 +12,14 @@ const electionSchema = new Schema<IElection>(
       type: String,
       trim: true
     },
+    options: [
+      {
+        _id: false,
+        id: { type: String, required: true },
+        label: { type: String, required: true, trim: true },
+        description: { type: String, trim: true }
+      }
+    ],
     type: {
       type: String,
       enum: ['single_choice', 'multiple_choice', 'yes_no'],

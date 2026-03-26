@@ -2,29 +2,27 @@ import { Router } from 'express';
 import { checkJwt } from '../../config/keycloak';
 import { attachAuthUser } from '../../middlewares/auth.middleware';
 import { requireRole } from '../../middlewares/role.middleware';
+import {
+  loginHandler,
+  registerHandler,
+  refreshTokenHandler,
+  logoutHandler,
+  checkSessionHandler,
+  getMeHandler,
+  adminOnlyHandler
+} from './auth.controller';
 
 const router = Router();
 
-router.get('/me', checkJwt, attachAuthUser, (req, res) => {
-  res.json({
-    success: true,
-    message: 'Authenticated user',
-    data: req.authUser
-  });
-});
+// Public - no auth required
+router.post('/auth/login', loginHandler);
+router.post('/auth/register', registerHandler);
+router.post('/auth/refresh', refreshTokenHandler);
+router.post('/auth/logout', logoutHandler);
 
-router.get('/admin-only', checkJwt, attachAuthUser, requireRole('admin'), (_req, res) => {
-  res.json({
-    success: true,
-    message: 'Admin access granted'
-  });
-});
-
-router.get('/voter-only', checkJwt, attachAuthUser, requireRole('voter', 'admin'), (_req, res) => {
-  res.json({
-    success: true,
-    message: 'Voter access granted'
-  });
-});
+// Protected
+router.get('/auth/check', checkJwt, attachAuthUser, checkSessionHandler);
+router.get('/auth/me', checkJwt, attachAuthUser, getMeHandler);
+router.get('/auth/admin-only', checkJwt, attachAuthUser, requireRole('admin'), adminOnlyHandler);
 
 export default router;

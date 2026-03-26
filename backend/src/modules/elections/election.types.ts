@@ -1,11 +1,18 @@
 export type ElectionType = 'single_choice' | 'multiple_choice' | 'yes_no';
 export type ElectionStatus = 'draft' | 'published' | 'open' | 'closed' | 'archived';
 
+export interface IElectionOption {
+  id: string;
+  label: string;
+  description?: string;
+}
+
 export interface IElection {
   title: string;
   description?: string;
   type: ElectionType;
   status: ElectionStatus;
+  options: IElectionOption[];
   visibilityRules: {
     locations?: {
       country?: string[];
