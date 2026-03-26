@@ -16,5 +16,7 @@ export const env = {
   mongoUri: required('MONGODB_URI'),
   clientUrl: required('CLIENT_URL'),
   keycloakIssuerBaseUrl: required('KEYCLOAK_ISSUER_BASE_URL'),
-  keycloakAudience: required('KEYCLOAK_AUDIENCE')
+  keycloakAudience: required('KEYCLOAK_AUDIENCE'),
+  keycloakClientId: required('KEYCLOAK_CLIENT_ID'),
+  keycloakClientSecret: process.env.KEYCLOAK_CLIENT_SECRET || ''
 };
