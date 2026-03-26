@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { ref } from 'vue';
+import { useRouter } from 'vue-router';
 import { Mail, Lock, LogIn, Eye, EyeOff } from 'lucide-vue-next';
 import { validateEmail, validatePassword, sanitizeInput } from '../../utils/validators';
+
+const router = useRouter();
 
 const email = ref('');
 const password = ref('');
@@ -9,10 +12,13 @@ const showPassword = ref(false);
 
 const emailError = ref<string | null>(null);
 const passwordError = ref<string | null>(null);
+const apiError = ref<string | null>(null);
+const isLoading = ref(false);
 
-const handleLogin = () => {
+const handleLogin = async () => {
   emailError.value = null;
   passwordError.value = null;
+  apiError.value = null;
 
   const safeEmail = sanitizeInput(email.value);
   const safePassword = password.value;
@@ -26,7 +32,37 @@ const handleLogin = () => {
     return;
   }
 
-  console.log('Login attempt with', safeEmail, safePassword);
+  try {
+    isLoading.value = true;
+    const response = await fetch('http://localhost:4000/api/auth/login', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        email: safeEmail,
+        password: safePassword
+      })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      apiError.value = data.message || 'Error al iniciar sesión';
+      return;
+    }
+
+    if (data.data && data.data.accessToken) {
+      localStorage.setItem('accessToken', data.data.accessToken);
+    }
+    
+    router.push('/dashboard');
+  } catch (error) {
+    apiError.value = 'Error de conexión con el servidor';
+    console.error('Login error:', error);
+  } finally {
+    isLoading.value = false;
+  }
 };
 </script>
 
@@ -39,6 +75,10 @@ const handleLogin = () => {
       </div>
 
       <form @submit.prevent="handleLogin" class="space-y-6">
+        <div v-if="apiError" class="p-3 bg-red-500/10 border border-red-500/50 rounded-lg text-red-500 text-sm">
+          {{ apiError }}
+        </div>
+
         <div>
           <label for="email" class="block text-sm font-medium text-slate-300 mb-1.5">Correo electrónico</label>
           <div class="relative">
@@ -95,10 +135,15 @@ const handleLogin = () => {
 
         <button 
           type="submit"
-          class="w-full flex justify-center items-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-slate-900 bg-emerald-500 hover:bg-emerald-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 focus:ring-emerald-500 transition-all font-semibold"
+          :disabled="isLoading"
+          class="w-full flex justify-center items-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-slate-900 bg-emerald-500 hover:bg-emerald-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 focus:ring-emerald-500 transition-all font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <LogIn class="w-5 h-5 mr-2" />
-          Entrar
+          <LogIn v-if="!isLoading" class="w-5 h-5 mr-2" />
+          <svg v-else class="animate-spin -ml-1 mr-3 h-5 w-5 text-slate-900" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          {{ isLoading ? 'Entrando...' : 'Entrar' }}
         </button>
       </form>
 

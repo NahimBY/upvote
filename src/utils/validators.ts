@@ -1,5 +1,18 @@
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+export const validateName = (name: string): string | null => {
+  if (!name || name.trim() === '') {
+    return 'El nombre es requerido';
+  }
+  if (name.length < 2) {
+    return 'El nombre debe tener al menos 2 caracteres';
+  }
+  if (name.length > 100) {
+    return 'El nombre es demasiado largo';
+  }
+  return null;
+};
+
 export const validateEmail = (email: string): string | null => {
   if (!email || email.trim() === '') {
     return 'El correo electrónico es requerido';
@@ -22,6 +35,16 @@ export const validatePassword = (password: string): string | null => {
   }
   if (password.length > 128) {
     return 'La contraseña es demasiado larga';
+  }
+  return null;
+};
+
+export const validateConfirmPassword = (confirmPassword: string, password: string): string | null => {
+  if (!confirmPassword || confirmPassword === '') {
+    return 'La confirmación de la contraseña es requerida';
+  }
+  if (confirmPassword !== password) {
+    return 'Las contraseñas no coinciden';
   }
   return null;
 };
