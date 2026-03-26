@@ -1,13 +1,17 @@
-import 'express-serve-static-core';
+import 'express';
 
-declare module 'express-serve-static-core' {
-  interface Request {
-    authUser?: {
-      sub: string;
-      email?: string;
-      preferred_username?: string;
-      realmRoles?: string[];
-    };
+declare global {
+  namespace Express {
+    interface Request {
+      authUser?: {
+        sub: string;
+        email?: string;
+        username?: string;
+        firstName?: string;
+        lastName?: string;
+        realmRoles: string[];
+      };
+    }
   }
 }
 
