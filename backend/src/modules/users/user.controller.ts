@@ -12,9 +12,9 @@ export const getMe = asyncHandler(async (req: Request, res: Response) => {
   const user = await findOrCreateUserFromToken({
     keycloakId: req.authUser.sub,
     email: req.authUser.email || '',
-    firstName: req.authUser.preferred_username || 'User',
-    lastName: '',
-    username: req.authUser.preferred_username || req.authUser.email || 'user',
+    firstName: req.authUser.firstName || 'User',
+    lastName: req.authUser.lastName || '',
+    username: req.authUser.username || req.authUser.email || 'user',
     role: req.authUser.realmRoles?.includes('admin') ? 'admin' : 'voter',
     location: {},
     eligibilityTags: [],
