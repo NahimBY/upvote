@@ -30,6 +30,7 @@ const createElectionSchema = z.object({
   endDate: z.string(),
   allowResultsBeforeClose: z.boolean().optional(),
   maxSelections: z.number().int().positive().optional(),
+  isLocationRestricted: z.boolean().optional(),
   visibilityRules: z
     .object({
       locations: z
@@ -57,6 +58,7 @@ const updateElectionSchema = z.object({
   endDate: z.string().optional(),
   allowResultsBeforeClose: z.boolean().optional(),
   maxSelections: z.number().int().positive().optional(),
+  isLocationRestricted: z.boolean().optional(),
   visibilityRules: z
     .object({
       locations: z
@@ -96,6 +98,7 @@ export const createElectionHandler = asyncHandler(async (req: Request, res: Resp
     createdByKeycloakId: req.authUser.sub,
     allowResultsBeforeClose: parsed.allowResultsBeforeClose ?? false,
     maxSelections: parsed.type === 'single_choice' || parsed.type === 'yes_no' ? 1 : (parsed.maxSelections ?? 1),
+    isLocationRestricted: parsed.isLocationRestricted ?? false,
     visibilityRules: parsed.visibilityRules ?? {},
     options
   });

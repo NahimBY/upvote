@@ -16,12 +16,14 @@ function isUserEligible(
   election: IElection,
   user: { location: IUser['location']; eligibilityTags: string[] }
 ): boolean {
-  const locs = election.visibilityRules?.locations;
-  if (locs) {
-    if (locs.country?.length && !locs.country.includes(user.location?.country || '')) return false;
-    if (locs.state?.length && !locs.state.includes(user.location?.state || '')) return false;
-    if (locs.city?.length && !locs.city.includes(user.location?.city || '')) return false;
-    if (locs.district?.length && !locs.district.includes(user.location?.district || '')) return false;
+  if (election.isLocationRestricted) {
+    const locs = election.visibilityRules?.locations;
+    if (locs) {
+      if (locs.country?.length && !locs.country.includes(user.location?.country || '')) return false;
+      if (locs.state?.length && !locs.state.includes(user.location?.state || '')) return false;
+      if (locs.city?.length && !locs.city.includes(user.location?.city || '')) return false;
+      if (locs.district?.length && !locs.district.includes(user.location?.district || '')) return false;
+    }
   }
   const tags = election.visibilityRules?.requiredTags;
   if (tags?.length) {

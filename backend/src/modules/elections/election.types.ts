@@ -13,6 +13,7 @@ export interface IElection {
   type: ElectionType;
   status: ElectionStatus;
   options: IElectionOption[];
+  isLocationRestricted: boolean;
   visibilityRules: {
     locations?: {
       country?: string[];
