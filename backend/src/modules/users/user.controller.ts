@@ -4,6 +4,8 @@ import { ApiError } from '../../core/utils/apiError';
 import { ApiResponse } from '../../core/utils/apiResponse';
 import { asyncHandler } from '../../core/utils/asyncHandler';
 import { findOrCreateUserFromToken, getAllUsers, updateUserRole, toggleUserActive } from './user.service';
+import { assignRealmRole, removeRealmRole } from '../auth/auth.controller';
+import { env } from '../../config/env';
 
 export const getMe = asyncHandler(async (req: Request, res: Response) => {
   if (!req.authUser?.sub) {
@@ -34,7 +36,31 @@ export const getAllUsersHandler = asyncHandler(async (req: Request, res: Respons
 
 export const updateUserRoleHandler = asyncHandler(async (req: Request, res: Response) => {
   const { role } = z.object({ role: z.enum(['admin', 'voter']) }).parse(req.body);
-  const user = await updateUserRole(req.params.keycloakId as string, role);
+  const keycloakId = req.params.keycloakId as string;
+
+  // Sync role in Keycloak
+  const KEYCLOAK_BASE = env.keycloakIssuerBaseUrl;
+  const TOKEN_URL = `${KEYCLOAK_BASE}/protocol/openid-connect/token`;
+  const params = new URLSearchParams();
+  params.append('grant_type', 'client_credentials');
+  params.append('client_id', env.keycloakClientId);
+  if (env.keycloakClientSecret) {
+    params.append('client_secret', env.keycloakClientSecret);
+  }
+  const tokenRes = await fetch(TOKEN_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: params.toString()
+  });
+  const tokenData: any = await tokenRes.json();
+  if (!tokenRes.ok) throw new ApiError(500, 'Failed to obtain admin token');
+  const adminToken = tokenData.access_token;
+
+  const oldRole = role === 'admin' ? 'voter' : 'admin';
+  await removeRealmRole(adminToken, keycloakId, oldRole);
+  await assignRealmRole(adminToken, keycloakId, role);
+
+  const user = await updateUserRole(keycloakId, role);
   res.json(new ApiResponse('User role updated', user));
 });
 

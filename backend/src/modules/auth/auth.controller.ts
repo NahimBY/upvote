@@ -66,6 +66,64 @@ async function getAdminToken(): Promise<string> {
   return (data as any).access_token;
 }
 
+async function getKeycloakUserId(adminToken: string, username: string): Promise<string> {
+  const res = await fetch(
+    `${ADMIN_BASE}/admin/realms/${REALM}/users?username=${encodeURIComponent(username)}&exact=true`,
+    { headers: { Authorization: `Bearer ${adminToken}` } }
+  );
+  const users: any[] = await res.json() as any[];
+  if (!users.length) throw new ApiError(404, 'User not found in Keycloak');
+  return users[0].id;
+}
+
+export async function assignRealmRole(adminToken: string, userId: string, roleName: string): Promise<void> {
+  // Get the role representation
+  const roleRes = await fetch(
+    `${ADMIN_BASE}/admin/realms/${REALM}/roles/${encodeURIComponent(roleName)}`,
+    { headers: { Authorization: `Bearer ${adminToken}` } }
+  );
+  if (!roleRes.ok) throw new ApiError(400, `Realm role '${roleName}' not found in Keycloak`);
+  const role = await roleRes.json();
+
+  // Assign the role to the user
+  const assignRes = await fetch(
+    `${ADMIN_BASE}/admin/realms/${REALM}/users/${userId}/role-mappings/realm`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${adminToken}`
+      },
+      body: JSON.stringify([role])
+    }
+  );
+  if (!assignRes.ok) {
+    const err = await assignRes.text().catch(() => '');
+    throw new ApiError(500, `Failed to assign role in Keycloak: ${err}`);
+  }
+}
+
+export async function removeRealmRole(adminToken: string, userId: string, roleName: string): Promise<void> {
+  const roleRes = await fetch(
+    `${ADMIN_BASE}/admin/realms/${REALM}/roles/${encodeURIComponent(roleName)}`,
+    { headers: { Authorization: `Bearer ${adminToken}` } }
+  );
+  if (!roleRes.ok) return; // Role doesn't exist, nothing to remove
+  const role = await roleRes.json();
+
+  await fetch(
+    `${ADMIN_BASE}/admin/realms/${REALM}/users/${userId}/role-mappings/realm`,
+    {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${adminToken}`
+      },
+      body: JSON.stringify([role])
+    }
+  );
+}
+
 // --- Schemas ---
 
 const loginSchema = z.object({
@@ -173,6 +231,10 @@ export const registerHandler = asyncHandler(async (req: Request, res: Response) 
     } catch {}
     throw new ApiError(400, msg);
   }
+
+  // Assign 'voter' realm role in Keycloak
+  const kcUserId = await getKeycloakUserId(adminToken, username);
+  await assignRealmRole(adminToken, kcUserId, 'voter');
 
   // Auto-login after registration
   const params = new URLSearchParams();
