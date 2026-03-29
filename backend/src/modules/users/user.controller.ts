@@ -18,7 +18,7 @@ export const getMe = asyncHandler(async (req: Request, res: Response) => {
     firstName: req.authUser.firstName || 'User',
     lastName: req.authUser.lastName || '',
     username: req.authUser.username || req.authUser.email || 'user',
-    role: req.authUser.realmRoles?.includes('admin') ? 'admin' : 'voter',
+    role: req.authUser.realmRoles?.includes('super-admin') ? 'super-admin' : req.authUser.realmRoles?.includes('admin') ? 'admin' : 'voter',
     location: {},
     eligibilityTags: [],
     isActive: true
@@ -35,7 +35,7 @@ export const getAllUsersHandler = asyncHandler(async (req: Request, res: Respons
 });
 
 export const updateUserRoleHandler = asyncHandler(async (req: Request, res: Response) => {
-  const { role } = z.object({ role: z.enum(['admin', 'voter']) }).parse(req.body);
+  const { role } = z.object({ role: z.enum(['super-admin', 'admin', 'voter']) }).parse(req.body);
   const keycloakId = req.params.keycloakId as string;
 
   // Sync role in Keycloak

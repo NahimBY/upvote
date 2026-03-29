@@ -10,8 +10,8 @@ const router = Router();
 router.get('/me', checkJwt, attachAuthUser, getMe);
 
 // Admin user management
-router.get('/admin/users', checkJwt, attachAuthUser, requireRole('admin'), getAllUsersHandler);
-router.patch('/admin/users/:keycloakId/role', checkJwt, attachAuthUser, requireRole('admin'), updateUserRoleHandler);
-router.patch('/admin/users/:keycloakId/active', checkJwt, attachAuthUser, requireRole('admin'), toggleUserActiveHandler);
+router.get('/admin/users', checkJwt, attachAuthUser, requireRole('admin', 'super-admin'), getAllUsersHandler);
+router.patch('/admin/users/:keycloakId/role', checkJwt, attachAuthUser, requireRole('super-admin'), updateUserRoleHandler);
+router.patch('/admin/users/:keycloakId/active', checkJwt, attachAuthUser, requireRole('admin', 'super-admin'), toggleUserActiveHandler);
 
 export default router;

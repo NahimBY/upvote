@@ -1,4 +1,4 @@
-export type UserRole = 'admin' | 'voter';
+export type UserRole = 'super-admin' | 'admin' | 'voter';
 
 export interface IUser {
   keycloakId: string;

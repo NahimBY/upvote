@@ -23,6 +23,6 @@ router.post('/auth/logout', logoutHandler);
 // Protected
 router.get('/auth/check', checkJwt, attachAuthUser, checkSessionHandler);
 router.get('/auth/me', checkJwt, attachAuthUser, getMeHandler);
-router.get('/auth/admin-only', checkJwt, attachAuthUser, requireRole('admin'), adminOnlyHandler);
+router.get('/auth/admin-only', checkJwt, attachAuthUser, requireRole('admin', 'super-admin'), adminOnlyHandler);
 
 export default router;
