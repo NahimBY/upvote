@@ -12,15 +12,16 @@ type KeycloakAuthPayload = {
 };
 
 export function attachAuthUser(req: Request, _res: Response, next: NextFunction): void {
-  const auth = (req as Request & { auth?: KeycloakAuthPayload }).auth;
+  // express-oauth2-jwt-bearer typically attaches the token payload on `req.auth.payload`
+  const authPayload = (req as any).auth?.payload as KeycloakAuthPayload | undefined;
 
   req.authUser = {
-    sub: auth?.sub || '',
-    email: auth?.email,
-    username: auth?.preferred_username,
-    firstName: auth?.given_name,
-    lastName: auth?.family_name,
-    realmRoles: auth?.realm_access?.roles || []
+    sub: authPayload?.sub || '',
+    email: authPayload?.email,
+    username: authPayload?.preferred_username,
+    firstName: authPayload?.given_name,
+    lastName: authPayload?.family_name,
+    realmRoles: authPayload?.realm_access?.roles || []
   };
 
   next();

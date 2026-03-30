@@ -38,6 +38,24 @@ const toggleStatus = (id: number) => {
     else if (room.status === 'Pausada') room.status = 'Activa';
   }
 };
+
+const fetchElections = async () => {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await fetch('/api/admin/elections', {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    const data = await response.json();
+    console.log(data);
+    rooms.value = data;
+  } catch (error) {
+    console.error('Error fetching elections:', error);
+  }
+};
+
+fetchElections();
 </script>
 
 <template>
