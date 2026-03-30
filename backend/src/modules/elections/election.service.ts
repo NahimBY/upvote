@@ -16,12 +16,14 @@ function isUserEligible(
   election: IElection,
   user: { location: IUser['location']; eligibilityTags: string[] }
 ): boolean {
-  const locs = election.visibilityRules?.locations;
-  if (locs) {
-    if (locs.country?.length && !locs.country.includes(user.location?.country || '')) return false;
-    if (locs.state?.length && !locs.state.includes(user.location?.state || '')) return false;
-    if (locs.city?.length && !locs.city.includes(user.location?.city || '')) return false;
-    if (locs.district?.length && !locs.district.includes(user.location?.district || '')) return false;
+  if (election.isLocationRestricted) {
+    const locs = election.visibilityRules?.locations;
+    if (locs) {
+      if (locs.country?.length && !locs.country.includes(user.location?.country || '')) return false;
+      if (locs.state?.length && !locs.state.includes(user.location?.state || '')) return false;
+      if (locs.city?.length && !locs.city.includes(user.location?.city || '')) return false;
+      if (locs.district?.length && !locs.district.includes(user.location?.district || '')) return false;
+    }
   }
   const tags = election.visibilityRules?.requiredTags;
   if (tags?.length) {
@@ -100,6 +102,29 @@ export async function getElectionDetailForVoter(id: string) {
     throw new ApiError(404, 'Election not found');
   }
   return election;
+}
+
+export async function closeExpiredElections(): Promise<number> {
+  const result = await ElectionModel.updateMany(
+    { status: 'open', endDate: { $lte: new Date() } },
+    { status: 'closed' }
+  );
+  return result.modifiedCount;
+}
+
+export async function closeElectionIfMaxVotesReached(electionId: string): Promise<boolean> {
+  const election = await ElectionModel.findById(electionId);
+  if (!election || election.status !== 'open' || !election.maxVotes) return false;
+
+  const { VoteModel } = await import('../votes/vote.model');
+  const voteCount = await VoteModel.countDocuments({ electionId });
+
+  if (voteCount >= election.maxVotes) {
+    election.status = 'closed';
+    await election.save();
+    return true;
+  }
+  return false;
 }
 
 export { isUserEligible };

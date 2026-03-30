@@ -30,6 +30,10 @@ const electionSchema = new Schema<IElection>(
       enum: ['draft', 'published', 'open', 'closed', 'archived'],
       default: 'draft'
     },
+    isLocationRestricted: {
+      type: Boolean,
+      default: false
+    },
     visibilityRules: {
       locations: {
         country: { type: [String], default: [] },
@@ -58,6 +62,10 @@ const electionSchema = new Schema<IElection>(
     maxSelections: {
       type: Number,
       default: 1
+    },
+    maxVotes: {
+      type: Number,
+      default: null
     }
   },
   {

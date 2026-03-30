@@ -103,6 +103,12 @@
         "clientRole": false,
         "containerId": "2010d6ec-222c-41bd-a3dc-e62c9801839b",
         "attributes": {}
+      },
+      {
+        "name": "super-admin",
+        "description": "Super administrator with full access",
+        "composite": false,
+        "clientRole": false
       }
     ],
     "client": {
