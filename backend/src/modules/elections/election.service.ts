@@ -104,4 +104,27 @@ export async function getElectionDetailForVoter(id: string) {
   return election;
 }
 
+export async function closeExpiredElections(): Promise<number> {
+  const result = await ElectionModel.updateMany(
+    { status: 'open', endDate: { $lte: new Date() } },
+    { status: 'closed' }
+  );
+  return result.modifiedCount;
+}
+
+export async function closeElectionIfMaxVotesReached(electionId: string): Promise<boolean> {
+  const election = await ElectionModel.findById(electionId);
+  if (!election || election.status !== 'open' || !election.maxVotes) return false;
+
+  const { VoteModel } = await import('../votes/vote.model');
+  const voteCount = await VoteModel.countDocuments({ electionId });
+
+  if (voteCount >= election.maxVotes) {
+    election.status = 'closed';
+    await election.save();
+    return true;
+  }
+  return false;
+}
+
 export { isUserEligible };

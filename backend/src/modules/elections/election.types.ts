@@ -28,6 +28,7 @@ export interface IElection {
   createdByKeycloakId: string;
   allowResultsBeforeClose: boolean;
   maxSelections?: number;
+  maxVotes?: number;
   createdAt?: Date;
   updatedAt?: Date;
 }

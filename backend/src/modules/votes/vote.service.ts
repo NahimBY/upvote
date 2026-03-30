@@ -4,7 +4,7 @@ import { VoteModel } from './vote.model';
 import { ElectionModel } from '../elections/election.model';
 import { UserModel } from '../users/user.model';
 import { ApiError } from '../../core/utils/apiError';
-import { isUserEligible } from '../elections/election.service';
+import { isUserEligible, closeElectionIfMaxVotesReached } from '../elections/election.service';
 import { IElection } from '../elections/election.types';
 
 export async function createVote(data: {
@@ -14,22 +14,18 @@ export async function createVote(data: {
   ip?: string;
   userAgent?: string;
 }) {
-  // 1. Find election
   const election = await ElectionModel.findById(data.electionId);
   if (!election) throw new ApiError(404, 'Election not found');
 
-  // 2. Check status
   if (election.status !== 'open') {
     throw new ApiError(400, 'Election is not open for voting');
   }
 
-  // 3. Check dates
   const now = new Date();
   if (now < election.startDate || now > election.endDate) {
     throw new ApiError(400, 'Election is not within its voting period');
   }
 
-  // 4. Validate option IDs
   const validIds = new Set(election.options.map((o) => o.id));
   for (const optId of data.selectedOptionIds) {
     if (!validIds.has(optId)) {
@@ -37,7 +33,6 @@ export async function createVote(data: {
     }
   }
 
-  // 5. Check selection count
   if (data.selectedOptionIds.length < 1) {
     throw new ApiError(400, 'Must select at least one option');
   }
@@ -45,7 +40,6 @@ export async function createVote(data: {
     throw new ApiError(400, `Too many options selected. Maximum: ${election.maxSelections || 1}`);
   }
 
-  // 6. Check user eligibility
   const user = await UserModel.findOne({ keycloakId: data.voterKeycloakId });
   if (!user || !user.isActive) {
     throw new ApiError(403, 'User account is inactive or not found');
@@ -57,9 +51,9 @@ export async function createVote(data: {
     throw new ApiError(403, 'Not eligible for this election');
   }
 
-  // 7. Create vote (unique index handles duplicate detection)
+  let vote;
   try {
-    return await VoteModel.create({
+    vote = await VoteModel.create({
       electionId: data.electionId,
       voterKeycloakId: data.voterKeycloakId,
       selectedOptionIds: data.selectedOptionIds,
@@ -76,6 +70,10 @@ export async function createVote(data: {
     }
     throw err;
   }
+
+  await closeElectionIfMaxVotesReached(data.electionId);
+
+  return vote;
 }
 
 export async function getElectionResults(electionId: string) {

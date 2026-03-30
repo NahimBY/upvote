@@ -62,6 +62,10 @@ const electionSchema = new Schema<IElection>(
     maxSelections: {
       type: Number,
       default: 1
+    },
+    maxVotes: {
+      type: Number,
+      default: null
     }
   },
   {
