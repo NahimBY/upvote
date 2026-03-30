@@ -10,13 +10,18 @@ import {
   Users,
   Image as ImageIcon,
   ChevronRight,
+  ChevronDown
 } from 'lucide-vue-next'
+import { useRouter } from 'vue-router'
+import { apiFetch } from '../../utils/apiFetch'
+
+const router = useRouter()
 
 // Form Data Model
 const formData = ref({
   name: '',
   description: '',
-  type: 'unipersonal',
+  type: 'single_choice',
   startDate: '',
   endDate: '',
 })
@@ -34,10 +39,45 @@ const removeCandidate = (id: number) => {
   }
 }
 
-const handleSave = () => {
-  console.log('Guardando Sala de Votación:', formData.value)
-  console.log('Candidatos Registrados:', candidates.value)
-  // Aquí iría la lógica para enviar al API (Axios o Fetch)
+const createElection = async () => {
+  try {
+    const payload: any = {
+      title: formData.value.name,
+      description: formData.value.description,
+      type: formData.value.type,
+      startDate: new Date(formData.value.startDate).toISOString(),
+      endDate: new Date(formData.value.endDate).toISOString(),
+      allowResultsBeforeClose: false,
+      maxSelections: formData.value.type === 'multiple_choice' ? candidates.value.length : 1
+    };
+
+    if (formData.value.type !== 'yes_no') {
+      payload.options = candidates.value.map(c => ({
+        label: c.name,
+        description: c.acronym
+      }));
+    }
+
+    const response = await apiFetch('/api/admin/elections', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    });
+    
+    if (!response.ok) {
+      const err = await response.json();
+      throw new Error(err.message || 'Error de la petición');
+    }
+
+    const data = await response.json();
+    console.log('Creada:', data);
+    router.push('/admin/rooms');
+  } catch (error) {
+    console.error('Error creating election:', error);
+    alert('No se pudo crear la sala. Verifica los datos.');
+  }
 }
 </script>
 
@@ -62,7 +102,7 @@ const handleSave = () => {
         </p>
       </div>
 
-      <form @submit.prevent="handleSave" class="space-y-6">
+      <form @submit.prevent="createElection" class="space-y-6">
         <!-- Room Details Block -->
         <div
           class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden transition-shadow hover:shadow-md"
@@ -113,8 +153,9 @@ const handleSave = () => {
                     v-model="formData.type"
                     class="block w-full pl-4 pr-10 py-2.5 bg-white text-slate-900 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 appearance-none cursor-pointer"
                   >
-                    <option value="unipersonal">Unipersonal</option>
-                    <option value="multiple">Múltiple</option>
+                    <option value="single_choice">Unipersonal</option>
+                    <option value="multiple_choice">Múltiple</option>
+                    <option value="yes_no">Aprobación (Sí/No)</option>
                   </select>
                   <ChevronDown
                     class="w-5 h-5 text-slate-400 absolute right-3 top-3 pointer-events-none"
@@ -132,7 +173,7 @@ const handleSave = () => {
                     id="startDate"
                     v-model="formData.startDate"
                     required
-                    class="block w-full pl-4 pr-10 py-2.5 border border-slate-300 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                    class="block w-full pl-4 pr-10 py-2.5 border border-slate-300 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:w-10 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:right-0 [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:m-0"
                   />
                   <Calendar
                     class="w-5 h-5 text-slate-400 absolute right-3 top-3 pointer-events-none"
@@ -150,7 +191,7 @@ const handleSave = () => {
                     id="endDate"
                     v-model="formData.endDate"
                     required
-                    class="block w-full pl-4 pr-10 py-2.5 border border-slate-300 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                    class="block w-full pl-4 pr-10 py-2.5 border border-slate-300 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:w-10 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:right-0 [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:m-0"
                   />
                   <Calendar
                     class="w-5 h-5 text-slate-400 absolute right-3 top-3 pointer-events-none"
@@ -163,6 +204,7 @@ const handleSave = () => {
 
         <!-- Dynamic Candidates Block -->
         <div
+          v-if="formData.type !== 'yes_no'"
           class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden transition-shadow hover:shadow-md"
         >
           <div
@@ -287,13 +329,13 @@ const handleSave = () => {
         <div class="flex items-center justify-end pt-6 border-t border-slate-200 space-x-4">
           <button
             type="button"
-            class="px-5 py-2.5 bg-white border border-slate-300 text-slate-700 font-medium rounded-xl hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 transition-colors shadow-sm"
+            class="px-5 py-2.5 bg-white border border-slate-300 text-slate-700 font-medium rounded-xl hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 transition-colors shadow-sm cursor-pointer" @click="$router.push('/admin/rooms')"
           >
             Cancelar
           </button>
           <button
             type="submit"
-            class="inline-flex items-center px-6 py-2.5 bg-emerald-600 text-white font-medium rounded-xl hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 transition-colors shadow-md"
+            class="inline-flex items-center px-6 py-2.5 bg-emerald-600 text-white font-medium rounded-xl hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 transition-colors shadow-md cursor-pointer"
           >
             <Save class="w-5 h-5 mr-2 -ml-1" />
             Guardar Sala de Votación

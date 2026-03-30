@@ -34,7 +34,7 @@ const handleLogin = async () => {
 
   try {
     isLoading.value = true;
-    const response = await fetch('http://localhost:4000/api/auth/login', {
+    const response = await fetch('/api/auth/login', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -54,6 +54,9 @@ const handleLogin = async () => {
 
     if (data.data && data.data.accessToken) {
       localStorage.setItem('accessToken', data.data.accessToken);
+      if (data.data.refreshToken) {
+        localStorage.setItem('refreshToken', data.data.refreshToken);
+      }
     }
     
     router.push('/dashboard');

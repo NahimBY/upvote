@@ -55,7 +55,7 @@ const handleRegister = async () => {
     const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : firstName;
     const username = safeEmail.split('@')[0];
 
-    const response = await fetch('http://localhost:4000/api/auth/register', {
+    const response = await fetch('/api/auth/register', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -78,6 +78,9 @@ const handleRegister = async () => {
 
     if (data.data && data.data.accessToken) {
       localStorage.setItem('accessToken', data.data.accessToken);
+      if (data.data.refreshToken) {
+        localStorage.setItem('refreshToken', data.data.refreshToken);
+      }
     }
 
     router.push('/login');

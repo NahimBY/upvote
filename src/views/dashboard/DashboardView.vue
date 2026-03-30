@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { ref } from 'vue';
-import { UserCircle, LogOut, CheckCircle2, LayoutDashboard } from 'lucide-vue-next';
+import { ref, onMounted, computed } from 'vue';
+import { UserCircle, LogOut, CheckCircle2, LayoutDashboard, Search, Inbox, History } from 'lucide-vue-next';
 import VotingCard from '../../components/common/VotingCard.vue';
 import router from '@/router';
+import { apiFetch } from '../../utils/apiFetch';
 
 // Mocked data
 const activeVotes = ref([
@@ -16,10 +17,53 @@ const historyVotes = ref([
   { id: 102, title: 'Encuesta de Satisfacción Comedor', date: '15 Sep 2025', status: 'Confirmado' },
 ]);
 
+const fetchElections = async () => {
+  try {
+    const response = await apiFetch('/api/elections');
+    if (response.ok) {
+      activeVotes.value = await response.json();
+    }
+  } catch (error) {
+    console.error('Error al obtener las votaciones:', error);
+  }
+};
+
+// Search logic
+const searchQuery = ref('');
+const filteredActiveVotes = computed(() => {
+  if (!searchQuery.value) return activeVotes.value;
+  return activeVotes.value.filter(vote => 
+    vote.title.toLowerCase().includes(searchQuery.value.toLowerCase())
+  );
+});
+
 const handleLogout = () => {
   localStorage.removeItem('accessToken');
+  localStorage.removeItem('refreshToken');
   router.push('/login');
 };
+
+const userName = ref('Usuario');
+
+onMounted(() => {
+  const token = localStorage.getItem('accessToken');
+  if (token) {
+    try {
+      const payloadBase64 = token.split('.')[1];
+      if (!payloadBase64) throw new Error('Invalid token format');
+      
+      const payloadDecoded = decodeURIComponent(atob(payloadBase64).split('').map(function(c) {
+          return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+      }).join(''));
+      
+      const payload = JSON.parse(payloadDecoded);
+      userName.value = payload.name || payload.given_name || payload.preferred_username || 'Usuario';
+    } catch (error) {
+      console.error('Error al decodificar el token', error);
+      userName.value = 'Usuario';
+    }
+  }
+});
 </script>
 
 <template>
@@ -38,7 +82,7 @@ const handleLogout = () => {
           </div>
           <div class="flex items-center gap-4">
             <div class="flex items-center gap-2 text-slate-300 hover:text-white transition-colors cursor-pointer p-2 rounded-lg hover:bg-slate-700/50">
-              <span class="text-sm font-medium hidden sm:block">Alexis Martinez</span>
+              <span class="text-sm font-medium hidden sm:block">{{ userName }}</span>
               <UserCircle class="w-7 h-7 text-emerald-500" />
             </div>
             <div class="w-px h-6 bg-slate-700"></div>
@@ -55,7 +99,7 @@ const handleLogout = () => {
 
       <!-- Section: Votaciones Activas -->
       <section>
-        <div class="mb-6 flex flex-col sm:flex-row sm:items-baseline justify-between gap-2">
+        <div class="mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <h2 class="text-2xl font-bold text-white tracking-tight flex items-center gap-2">
             <LayoutDashboard class="w-6 h-6 text-emerald-500" />
             Votaciones Activas
@@ -63,9 +107,25 @@ const handleLogout = () => {
           <span class="text-sm font-medium text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">{{ activeVotes.length }} procesos abiertos</span>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- Barra de búsqueda -->
+        <div class="mb-6">
+          <div class="relative max-w-2xl">
+            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
+              <Search class="w-5 h-5" />
+            </div>
+            <input 
+              v-model="searchQuery"
+              type="text" 
+              class="block w-full pl-11 pr-4 py-3 bg-slate-800 border-slate-700/50 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all shadow-sm shadow-slate-900/10"
+              placeholder="Buscar por nombre de elección..."
+            />
+          </div>
+        </div>
+
+        <!-- Cuadrícula de tarjetas -->
+        <div v-if="filteredActiveVotes.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <VotingCard
-            v-for="vote in activeVotes"
+            v-for="vote in filteredActiveVotes"
             :key="vote.id"
             :id="vote.id"
             :title="vote.title"
@@ -73,11 +133,30 @@ const handleLogout = () => {
             :status="vote.status"
           />
         </div>
+
+        <!-- Estado Vacío -->
+        <div v-else class="bg-slate-800/50 rounded-2xl border border-slate-700/50 p-12 text-center flex flex-col items-center justify-center">
+          <div class="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center mb-4 border border-slate-700">
+            <Inbox class="w-8 h-8 text-slate-500" />
+          </div>
+          <h3 class="text-lg font-bold text-white mb-2">No se encontraron resultados</h3>
+          <p class="text-slate-400 max-w-sm mx-auto">
+            No pudimos encontrar ninguna votación activa que coincida con "<span class="text-slate-300 font-medium">{{ searchQuery }}</span>". Intenta con otros términos.
+          </p>
+          <button @click="searchQuery = ''" class="mt-6 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-sm font-medium transition-colors border border-slate-700">
+            Borrar búsqueda
+          </button>
+        </div>
       </section>
 
       <!-- Section: Mi Historial -->
       <section>
-        <h2 class="text-2xl font-bold text-white tracking-tight mb-6">Mi Historial</h2>
+        <div class="mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <h2 class="text-2xl font-bold text-white tracking-tight flex items-center gap-2">
+            <History class="w-6 h-6 text-emerald-500" />
+            Mi Historial
+          </h2>
+        </div>
 
         <div class="bg-slate-800 rounded-xl border border-slate-700/50 overflow-hidden shadow-lg">
           <div class="overflow-x-auto">

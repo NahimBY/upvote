@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
   LayoutDashboard,
@@ -9,7 +9,7 @@ import {
   Menu,
   X,
   LogOut,
-  CheckSquare,
+  CheckCircle2,
   ChartBar,
 } from 'lucide-vue-next'
 
@@ -24,6 +24,28 @@ const navigation = [
   { name: 'Estadísticas', href: '/admin/statistics', icon: ChartBar },
   { name: 'Configuración', href: '/admin/settings', icon: Settings },
 ]
+
+const userName = ref('Usuario')
+
+onMounted(() => {
+  const token = localStorage.getItem('accessToken')
+  if (token) {
+    try {
+      const payloadBase64 = token.split('.')[1]
+      if (!payloadBase64) throw new Error('Invalid token format')
+      
+      const payloadDecoded = decodeURIComponent(atob(payloadBase64).split('').map(function(c) {
+          return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+      }).join(''));
+      
+      const payload = JSON.parse(payloadDecoded);
+      userName.value = payload.name || payload.given_name || payload.preferred_username || 'Usuario';
+    } catch (error) {
+      console.error('Error al decodificar el token', error);
+      userName.value = 'Usuario';
+    }
+  }
+});
 
 const handleLogout = () => {
   localStorage.removeItem('accessToken')
@@ -51,7 +73,11 @@ const handleLogout = () => {
         class="flex items-center justify-between h-16 px-6 bg-slate-950 border-b border-slate-800"
       >
         <div class="flex items-center space-x-2">
-          <CheckSquare class="w-7 h-7 text-emerald-500" />
+          <span
+            class="w-8 h-8 rounded-lg bg-emerald-500 flex items-center justify-center text-slate-900 shadow-md"
+          >
+            <CheckCircle2 class="w-5 h-5" stroke-width="3" />
+          </span>
           <span class="text-xl font-bold text-white tracking-tight"
             >UpVote <span class="text-emerald-400">Admin</span></span
           >
@@ -134,11 +160,11 @@ const handleLogout = () => {
           <!-- Gestión Administrativa -->
         </div>
         <div class="flex items-center space-x-4">
-          <div class="text-sm font-medium text-slate-700">Administrator</div>
+          <div class="text-sm font-medium text-slate-700">{{ userName }}</div>
           <div
             class="w-9 h-9 rounded-full bg-emerald-600 flex items-center justify-center text-white font-bold text-sm shadow-sm ring-4 ring-emerald-50 cursor-pointer hover:bg-emerald-700 transition-colors"
           >
-            A
+            {{ userName.charAt(0).toUpperCase() }}
           </div>
         </div>
       </header>
