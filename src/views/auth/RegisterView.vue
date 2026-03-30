@@ -76,13 +76,11 @@ const handleRegister = async () => {
       return;
     }
 
-    // Save tokens if needed
     if (data.data && data.data.accessToken) {
       localStorage.setItem('accessToken', data.data.accessToken);
     }
 
-    // Redirect to dashboard
-    router.push('/dashboard');
+    router.push('/login');
   } catch (error) {
     apiError.value = 'Error de conexión con el servidor';
     console.error('Register error:', error);

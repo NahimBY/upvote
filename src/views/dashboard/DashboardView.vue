@@ -2,6 +2,7 @@
 import { ref } from 'vue';
 import { UserCircle, LogOut, CheckCircle2, LayoutDashboard } from 'lucide-vue-next';
 import VotingCard from '../../components/common/VotingCard.vue';
+import router from '@/router';
 
 // Mocked data
 const activeVotes = ref([
@@ -14,6 +15,11 @@ const historyVotes = ref([
   { id: 101, title: 'Elección Centro de Estudiantes 2025', date: '10 Nov 2025', status: 'Confirmado' },
   { id: 102, title: 'Encuesta de Satisfacción Comedor', date: '15 Sep 2025', status: 'Confirmado' },
 ]);
+
+const handleLogout = () => {
+  localStorage.removeItem('accessToken');
+  router.push('/login');
+};
 </script>
 
 <template>
@@ -36,7 +42,7 @@ const historyVotes = ref([
               <UserCircle class="w-7 h-7 text-emerald-500" />
             </div>
             <div class="w-px h-6 bg-slate-700"></div>
-            <button class="text-slate-400 hover:text-red-400 transition-colors p-2 rounded-lg hover:bg-slate-700/50" title="Cerrar sesión">
+            <button class="text-slate-400 hover:text-red-400 transition-colors p-2 rounded-lg hover:bg-slate-700/50" title="Cerrar sesión" @click="handleLogout">
               <LogOut class="w-5 h-5" />
             </button>
           </div>
