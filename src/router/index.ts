@@ -6,6 +6,7 @@ import DashboardView from '../views/dashboard/DashboardView.vue'
 import AdminDashboardView from '../views/admin/DashboardView.vue'
 import ManageRoomsView from '../views/admin/ManageRoomsView.vue'
 import CreateRoomView from '../views/admin/CreateRoomView.vue'
+import EditRoomView from '../views/admin/EditRoomView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -46,6 +47,12 @@ const router = createRouter({
       path: '/admin/rooms/create',
       name: 'admin-create-room',
       component: CreateRoomView,
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/admin/rooms/edit/:id',
+      name: 'admin-edit-room',
+      component: EditRoomView,
       meta: { requiresAuth: true }
     }
   ],

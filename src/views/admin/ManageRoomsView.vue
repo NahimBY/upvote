@@ -1,9 +1,12 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import AdminLayout from '../../layouts/AdminLayout.vue';
 import { apiFetch } from '../../utils/apiFetch';
-import { Search, Filter, Plus, Edit2, PauseCircle, PlayCircle, BarChart2, Trash2, Building2, RefreshCw } from 'lucide-vue-next';
+import { Search, Filter, Plus, Edit2, BarChart2, Trash2, Building2, RefreshCw, MoreVertical, CheckCircle2, PlayCircle, StopCircle, Archive } from 'lucide-vue-next';
 import DeleteRoomCard from '../../components/admin/rooms/DeleteRoomCard.vue';
+import { useRouter } from 'vue-router';
+
+const router = useRouter();
 
 interface Election {
   _id: string;
@@ -34,6 +37,10 @@ const roomToDelete = ref('');
 const promptDelete = (id: string) => {
   roomToDelete.value = id;
   showDeleteModal.value = true;
+};
+
+const editRoom = (id: string) => {
+  router.push(`/admin/rooms/edit/${id}`);
 };
 
 const handleRoomDeleted = (id: string) => {
@@ -78,24 +85,66 @@ const getStatusColor = (status: string) => {
   }
 };
 
-const toggleStatus = async (id: string) => {
+// Gestión de Menú Desplegable con Teleport
+const openDropdownId = ref<string | null>(null);
+const dropdownStyles = ref({ top: '0px', right: '0px' });
+
+const toggleDropdown = (id: string, event: MouseEvent) => {
+  if (openDropdownId.value === id) {
+    openDropdownId.value = null;
+    return;
+  }
+  
+  openDropdownId.value = id;
+  const btn = event.currentTarget as HTMLElement;
+  const rect = btn.getBoundingClientRect();
+  
+  // Calcular posición FIJA relativa al viewport
+  dropdownStyles.value = {
+    top: `${rect.bottom + 8}px`,
+    right: `${window.innerWidth - rect.right}px`
+  };
+};
+
+const closeDropdowns = (e: Event) => {
+  const target = e.target as HTMLElement;
+  if (!target.closest('.action-menu-container')) {
+    openDropdownId.value = null;
+  }
+};
+
+onMounted(() => {
+  document.addEventListener('click', closeDropdowns);
+  fetchElections();
+});
+
+onUnmounted(() => {
+  document.removeEventListener('click', closeDropdowns);
+});
+
+const updateStatus = async (id: string, newStatus: string) => {
+  openDropdownId.value = null; // Cierra el menú al accionar
   const room = rooms.value.find(r => r._id === id);
-  if (room) {
-    const newStatus = room.status === 'open' ? 'closed' : 'open';
-    try {
-      const response = await apiFetch(`/api/admin/elections/${id}/status`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ status: newStatus })
-      });
-      if (response.ok) {
-        room.status = newStatus;
-      }
-    } catch (error) {
-      console.error('Error toggling status:', error);
+  if (!room) return;
+
+  try {
+    const response = await apiFetch(`/api/admin/elections/${id}/status`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ status: newStatus })
+    });
+    const parsed = await response.json();
+    if (response.ok && parsed.success) {
+      room.status = newStatus;
+      console.log('Estado actualizado:', room);
+    } else {
+      console.error('API error al cambiar estado:', parsed.message);
+      alert('Hubo un error al cambiar el estado de la sala: ' + parsed.message);
     }
+  } catch (error) {
+    console.error('Error updating status:', error);
   }
 };
 
@@ -235,20 +284,97 @@ const refreshElections = async () => {
                     <button class="p-2 text-slate-400 hover:text-emerald-600 hover:bg-slate-100 rounded-lg transition-colors" title="Resultados y Estadísticas">
                       <BarChart2 class="w-5 h-5" />
                     </button>
-                    <button class="p-2 text-slate-400 hover:text-emerald-600 hover:bg-slate-100 rounded-lg transition-colors" title="Editar Sala">
+                    <button class="p-2 text-slate-400 hover:text-emerald-600 hover:bg-slate-100 rounded-lg transition-colors" title="Editar Sala" @click="editRoom(room._id)">
                       <Edit2 class="w-4 h-4" />
                     </button>
-                    <!-- Toggle Activa/Pausada -->
-                    <button 
-                      @click="toggleStatus(room._id)"
-                      v-if="room.status !== 'archived'"
-                      class="p-2 rounded-lg transition-colors"
-                      :class="room.status === 'open' ? 'text-slate-400 hover:text-amber-600 hover:bg-amber-50' : 'text-slate-400 hover:text-emerald-600 hover:bg-emerald-50'"
-                      :title="room.status === 'open' ? 'Pausar/Cerrar Elección' : 'Abrir Elección'"
-                    >
-                      <PauseCircle v-if="room.status === 'open'" class="w-5 h-5" />
-                      <PlayCircle v-else class="w-5 h-5" />
-                    </button>
+                    <!-- Dropdown de Estados -->
+                    <div class="action-menu-container inline-block text-left">
+                      <button 
+                        @click="toggleDropdown(room._id, $event)"
+                        class="p-2 text-slate-400 hover:text-emerald-600 hover:bg-slate-100 rounded-lg transition-colors" 
+                        title="Opciones de Estado"
+                      >
+                        <MoreVertical class="w-5 h-5 pointer-events-none" />
+                      </button>
+
+                      <!-- Menú Desplegable con Teleport para evitar recorte por tabla -->
+                      <Teleport to="body">
+                        <transition
+                          enter-active-class="transition ease-out duration-100"
+                          enter-from-class="transform opacity-0 scale-95"
+                          enter-to-class="transform opacity-100 scale-100"
+                          leave-active-class="transition ease-in duration-75"
+                          leave-from-class="transform opacity-100 scale-100"
+                          leave-to-class="transform opacity-0 scale-95"
+                        >
+                          <div 
+                            v-if="openDropdownId === room._id"
+                            class="fixed z-[100] w-52 rounded-xl bg-white shadow-xl border border-slate-200 focus:outline-none overflow-hidden"
+                            :style="dropdownStyles"
+                          >
+                            <div class="py-1">
+                              <div class="px-4 py-2 border-b border-slate-100 bg-slate-50/50">
+                                 <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Cambiar estado a:</p>
+                              </div>
+                              
+                              <!-- Opción 1: Publicar -->
+                              <button 
+                                @click="updateStatus(room._id, 'published')"
+                                :disabled="room.status !== 'draft'"
+                                :class="[
+                                  'w-full text-left px-4 py-2.5 text-sm flex items-center transition-colors',
+                                  room.status === 'draft' ? 'text-slate-700 hover:bg-slate-50 cursor-pointer font-medium' : 'text-slate-300 cursor-not-allowed'
+                                ]"
+                              >
+                                <CheckCircle2 class="w-4 h-4 mr-2.5" />
+                                Publicar Sala
+                              </button>
+
+                              <!-- Opción 2: Abrir -->
+                              <button 
+                                @click="updateStatus(room._id, 'open')"
+                                :disabled="room.status !== 'published'"
+                                :class="[
+                                  'w-full text-left px-4 py-2.5 text-sm flex items-center transition-colors',
+                                  room.status === 'published' ? 'text-emerald-700 hover:bg-emerald-50 cursor-pointer font-medium' : 'text-slate-300 cursor-not-allowed'
+                                ]"
+                              >
+                                <PlayCircle class="w-4 h-4 mr-2.5" />
+                                Abrir Votación
+                              </button>
+
+                              <!-- Opción 3: Cerrar -->
+                              <button 
+                                @click="updateStatus(room._id, 'closed')"
+                                :disabled="room.status !== 'open'"
+                                :class="[
+                                  'w-full text-left px-4 py-2.5 text-sm flex items-center transition-colors',
+                                  room.status === 'open' ? 'text-amber-700 hover:bg-amber-50 cursor-pointer font-medium' : 'text-slate-300 cursor-not-allowed'
+                                ]"
+                              >
+                                <StopCircle class="w-4 h-4 mr-2.5" />
+                                Cerrar Definitivamente
+                              </button>
+                              
+                              <div class="border-t border-slate-100 my-1"></div>
+
+                              <!-- Opción 4: Archivar -->
+                              <button 
+                                @click="updateStatus(room._id, 'archived')"
+                                :disabled="room.status === 'archived' || room.status === 'draft' || room.status === 'published'"
+                                :class="[
+                                  'w-full text-left px-4 py-2.5 text-sm flex items-center transition-colors',
+                                  (room.status === 'closed' || room.status === 'open') ? 'text-slate-700 hover:bg-slate-50 cursor-pointer font-medium' : 'text-slate-300 cursor-not-allowed'
+                                ]"
+                              >
+                                <Archive class="w-4 h-4 mr-2.5" />
+                                Archivar Historial
+                              </button>
+                            </div>
+                          </div>
+                        </transition>
+                      </Teleport>
+                    </div>
                     <button class="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors" title="Eliminar Sala" @click="promptDelete(room._id)">
                       <Trash2 class="w-5 h-5" />
                     </button>
