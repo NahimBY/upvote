@@ -1,5 +1,7 @@
 import { Request, Response } from 'express';
 import { z } from 'zod';
+import jwt from 'jsonwebtoken';
+import nodemailer from 'nodemailer';
 import { asyncHandler } from '../../core/utils/asyncHandler';
 import { ApiResponse } from '../../core/utils/apiResponse';
 import { ApiError } from '../../core/utils/apiError';
@@ -141,6 +143,88 @@ const registerSchema = z.object({
 const refreshSchema = z.object({
   refreshToken: z.string().min(1)
 });
+
+const forgotPasswordSchema = z.object({
+  email: z.string().email()
+});
+
+const resetPasswordSchema = z.object({
+  token: z.string().min(1),
+  password: z.string().min(6)
+});
+
+const RESET_SECRET = env.keycloakClientSecret + '_reset';
+
+const mailTransporter = nodemailer.createTransport({
+  host: env.smtpHost,
+  port: env.smtpPort,
+  secure: false,
+  ...(env.smtpUser && {
+    auth: {
+      user: env.smtpUser,
+      pass: env.smtpPass,
+    },
+  }),
+});
+
+function buildResetEmail(resetLink: string): string {
+  return `
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin:0;padding:0;background-color:#0f172a;font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color:#0f172a;padding:40px 20px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="480" cellspacing="0" cellpadding="0" style="background-color:#1e293b;border-radius:16px;border:1px solid rgba(51,65,85,0.5);overflow:hidden;">
+          <!-- Header -->
+          <tr>
+            <td style="padding:32px 40px 24px;text-align:center;border-bottom:1px solid rgba(51,65,85,0.5);">
+              <h1 style="margin:0;font-size:28px;font-weight:700;color:#ffffff;letter-spacing:-0.5px;">UpVote</h1>
+            </td>
+          </tr>
+          <!-- Body -->
+          <tr>
+            <td style="padding:32px 40px;">
+              <h2 style="margin:0 0 12px;font-size:20px;font-weight:600;color:#ffffff;">Recuperar contraseña</h2>
+              <p style="margin:0 0 24px;font-size:14px;line-height:1.6;color:#94a3b8;">
+                Recibimos una solicitud para restablecer la contraseña de tu cuenta. Haz clic en el botón de abajo para crear una nueva contraseña.
+              </p>
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                <tr>
+                  <td align="center" style="padding:4px 0 24px;">
+                    <a href="${resetLink}" target="_blank" style="display:inline-block;padding:12px 32px;background-color:#10b981;color:#0f172a;font-size:14px;font-weight:600;text-decoration:none;border-radius:8px;">
+                      Restablecer contraseña
+                    </a>
+                  </td>
+                </tr>
+              </table>
+              <p style="margin:0 0 16px;font-size:13px;line-height:1.6;color:#64748b;">
+                Si no solicitaste este cambio, puedes ignorar este correo. Tu contraseña no será modificada.
+              </p>
+              <p style="margin:0;font-size:13px;line-height:1.6;color:#64748b;">
+                Este enlace expira en <strong style="color:#94a3b8;">30 minutos</strong>.
+              </p>
+            </td>
+          </tr>
+          <!-- Footer -->
+          <tr>
+            <td style="padding:20px 40px;text-align:center;border-top:1px solid rgba(51,65,85,0.5);">
+              <p style="margin:0;font-size:12px;color:#475569;">
+                &copy; ${new Date().getFullYear()} UpVote. Todos los derechos reservados.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+}
 
 // --- Handlers ---
 
@@ -323,4 +407,85 @@ export const checkSessionHandler = asyncHandler(async (_req: Request, res: Respo
 
 export const organizatorOnlyHandler = asyncHandler(async (_req: Request, res: Response) => {
   res.json(new ApiResponse('Organizator access granted'));
+});
+
+export const forgotPasswordHandler = asyncHandler(async (req: Request, res: Response) => {
+  const { email } = forgotPasswordSchema.parse(req.body);
+
+  const organizatorToken = await getOrganizatorToken();
+
+  // Search user by email in Keycloak
+  const searchRes = await fetch(
+    `${ADMIN_BASE}/admin/realms/${REALM}/users?email=${encodeURIComponent(email)}&exact=true`,
+    { headers: { Authorization: `Bearer ${organizatorToken}` } }
+  );
+  const users: any[] = await searchRes.json() as any[];
+
+  if (!users.length) {
+    // Return success even if user not found to prevent email enumeration
+    res.json(new ApiResponse('Si el correo está registrado, recibirás un enlace para restablecer tu contraseña'));
+    return;
+  }
+
+  const keycloakUserId = users[0].id;
+
+  // Generate a short-lived JWT for the reset link
+  const resetToken = jwt.sign(
+    { sub: keycloakUserId, email, purpose: 'password-reset' },
+    RESET_SECRET,
+    { expiresIn: '30m' }
+  );
+
+  const resetLink = `${env.clientUrl}/reset-password?token=${resetToken}`;
+
+  await mailTransporter.sendMail({
+    from: '"UpVote Team" <alex.mtz.rv17@gmail.com>',
+    to: email,
+    subject: 'Recuperar contraseña - UpVote',
+    html: buildResetEmail(resetLink),
+  });
+
+  res.json(new ApiResponse('Si el correo está registrado, recibirás un enlace para restablecer tu contraseña'));
+});
+
+export const resetPasswordHandler = asyncHandler(async (req: Request, res: Response) => {
+  const { token, password } = resetPasswordSchema.parse(req.body);
+
+  let payload: any;
+  try {
+    payload = jwt.verify(token, RESET_SECRET);
+  } catch {
+    throw new ApiError(400, 'El enlace de recuperación es inválido o ha expirado');
+  }
+
+  if (payload.purpose !== 'password-reset') {
+    throw new ApiError(400, 'Token inválido');
+  }
+
+  const organizatorToken = await getOrganizatorToken();
+
+  // Reset password via Keycloak Admin API
+  const resetRes = await fetch(
+    `${ADMIN_BASE}/admin/realms/${REALM}/users/${payload.sub}/reset-password`,
+    {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${organizatorToken}`
+      },
+      body: JSON.stringify({
+        type: 'password',
+        value: password,
+        temporary: false
+      })
+    }
+  );
+
+  if (!resetRes.ok) {
+    const errorText = await resetRes.text().catch(() => '');
+    console.error(`Keycloak reset-password failed [${resetRes.status}]:`, errorText);
+    throw new ApiError(500, 'Error al restablecer la contraseña');
+  }
+
+  res.json(new ApiResponse('Contraseña restablecida exitosamente'));
 });

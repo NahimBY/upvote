@@ -18,5 +18,9 @@ export const env = {
   keycloakIssuerBaseUrl: required('KEYCLOAK_ISSUER_BASE_URL'),
   keycloakAudience: required('KEYCLOAK_AUDIENCE'),
   keycloakClientId: required('KEYCLOAK_CLIENT_ID'),
-  keycloakClientSecret: process.env.KEYCLOAK_CLIENT_SECRET || ''
+  keycloakClientSecret: process.env.KEYCLOAK_CLIENT_SECRET || '',
+  smtpHost: process.env.SMTP_HOST || 'localhost',
+  smtpPort: Number(process.env.SMTP_PORT || 1025),
+  smtpUser: process.env.SMTP_USER || '',
+  smtpPass: process.env.SMTP_PASS || '',
 };

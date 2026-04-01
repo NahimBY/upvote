@@ -7,6 +7,8 @@ import {
   registerHandler,
   refreshTokenHandler,
   logoutHandler,
+  forgotPasswordHandler,
+  resetPasswordHandler,
   checkSessionHandler,
   getMeHandler,
   organizatorOnlyHandler
@@ -19,6 +21,8 @@ router.post('/auth/login', loginHandler);
 router.post('/auth/register', registerHandler);
 router.post('/auth/refresh', refreshTokenHandler);
 router.post('/auth/logout', logoutHandler);
+router.post('/auth/forgot-password', forgotPasswordHandler);
+router.post('/auth/reset-password', resetPasswordHandler);
 
 // Protected
 router.get('/auth/check', checkJwt, attachAuthUser, checkSessionHandler);

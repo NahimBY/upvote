@@ -33,7 +33,7 @@
   "verifyEmail": false,
   "loginWithEmailAllowed": true,
   "duplicateEmailsAllowed": false,
-  "resetPasswordAllowed": false,
+  "resetPasswordAllowed": true,
   "editUsernameAllowed": false,
   "bruteForceProtected": false,
   "permanentLockout": false,
@@ -1617,7 +1617,15 @@
     "contentSecurityPolicy": "frame-src 'self'; frame-ancestors 'self'; object-src 'none';",
     "strictTransportSecurity": "max-age=31536000; includeSubDomains"
   },
-  "smtpServer": {},
+  "smtpServer": {
+    "host": "mailpit",
+    "port": "1025",
+    "from": "alex.mtz.rv17@gmail.com",
+    "fromDisplayName": "UpVote Team",
+    "ssl": "false",
+    "starttls": "false",
+    "auth": "false"
+  },
   "eventsEnabled": false,
   "eventsListeners": [
     "jboss-logging"

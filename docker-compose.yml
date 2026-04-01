@@ -10,6 +10,14 @@ services:
     volumes:
       - ./keycloak/realm-export:/opt/keycloak/data/import
       - keycloak_data:/opt/keycloak/data
+    depends_on:
+      - mailpit
+
+  mailpit:
+    image: axllent/mailpit:latest
+    ports:
+      - "8025:8025"
+      - "1025:1025"
 
 volumes:
   keycloak_data:

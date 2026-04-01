@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import LoginView from '../views/auth/LoginView.vue'
 import RegisterView from '../views/auth/RegisterView.vue'
 import PasswordRecoveryView from '../views/auth/PasswordRecoveryView.vue'
+import ResetPasswordView from '../views/auth/ResetPasswordView.vue'
 
 import OrganizatorDashboardView from '../views/organizator/DashboardView.vue'
 import ManageRoomsView from '../views/organizator/ManageRoomsView.vue'
@@ -68,6 +69,12 @@ const router = createRouter({
       path: '/password-recovery',
       name: 'password-recovery',
       component: PasswordRecoveryView,
+      meta: { requiresAuth: false }
+    },
+    {
+      path: '/reset-password',
+      name: 'reset-password',
+      component: ResetPasswordView,
       meta: { requiresAuth: false }
     }
   ],

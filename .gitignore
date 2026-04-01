@@ -42,9 +42,9 @@ test-results/
 playwright-report/
 
 # Environment files
-.env
-.env.*
-!.env.example
+# .env
+# .env.*
+# !.env.example
 
 # Optional future-proof ignores
 *.pem
