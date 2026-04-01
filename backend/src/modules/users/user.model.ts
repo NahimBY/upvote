@@ -32,7 +32,7 @@ const userSchema = new Schema<IUser>(
     },
     role: {
       type: String,
-      enum: ['super-admin', 'admin', 'voter'],
+      enum: ['super-admin', 'organizator', 'voter'],
       default: 'voter'
     },
     location: {

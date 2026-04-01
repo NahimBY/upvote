@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import AdminLayout from '../../layouts/AdminLayout.vue'
+import OrganizatorLayout from '../../layouts/OrganizatorLayout.vue'
 import { apiFetch } from '../../utils/apiFetch'
 import {
   ChevronRight,
@@ -43,7 +43,7 @@ const status = ref('')
 const fetchRoom = async () => {
   try {
     loading.value = true
-    const response = await apiFetch(`/api/admin/elections/${roomId}`)
+    const response = await apiFetch(`/api/organizator/elections/${roomId}`)
     const parsed = await response.json()
 
     if (parsed.success && parsed.data) {
@@ -133,10 +133,10 @@ const saveRoom = async () => {
       maxSelections: Number(maxSelections.value),
       maxVotes: maxVotes.value ? Number(maxVotes.value) : null,
       isLocationRestricted: isLocationRestricted.value,
-      options: options.value.filter((o) => o.label && o.label.trim())
+      options: options.value.filter((o) => o.label && o.label.trim()),
     }
 
-    const response = await apiFetch(`/api/admin/elections/${roomId}`, {
+    const response = await apiFetch(`/api/organizator/elections/${roomId}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -153,26 +153,28 @@ const saveRoom = async () => {
 
     if (status.value !== room.value.status) {
       if (status.value === 'draft') {
-        error.value = 'El backend no permite revertir la sala a Borrador una vez activada. (El resto de cambios sí se guardaron)'
+        error.value =
+          'El backend no permite revertir la sala a Borrador una vez activada. (El resto de cambios sí se guardaron)'
         return
       }
-      
-      const statusResponse = await apiFetch(`/api/admin/elections/${roomId}/status`, {
+
+      const statusResponse = await apiFetch(`/api/organizator/elections/${roomId}/status`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ status: status.value }),
       })
-      
+
       const statusParsed = await statusResponse.json()
       if (!statusParsed.success) {
-        error.value = statusParsed.message || 'Cambios guardados, pero error al actualizar el estado'
+        error.value =
+          statusParsed.message || 'Cambios guardados, pero error al actualizar el estado'
         return
       }
     }
 
-    router.push('/admin/rooms')
+    router.push('/organizator/rooms')
   } catch (err) {
     error.value = 'Error de conexión'
     console.error(err)
@@ -183,13 +185,13 @@ const saveRoom = async () => {
 </script>
 
 <template>
-  <AdminLayout>
+  <OrganizatorLayout>
     <div class="max-w-4xl mx-auto space-y-6 pb-12">
       <!-- Header -->
       <div class="mb-8">
         <div class="flex items-center gap-3 mb-4">
           <button
-            @click="$router.push('/admin/rooms')"
+            @click="$router.push('/organizator/rooms')"
             class="text-sm font-medium text-slate-500 cursor-pointer hover:text-slate-600 transition-colors"
           >
             Salas de Votación
@@ -544,7 +546,7 @@ const saveRoom = async () => {
         <div class="flex flex-col sm:flex-row gap-3">
           <button
             type="button"
-            @click="$router.push('/admin/rooms')"
+            @click="$router.push('/organizator/rooms')"
             class="px-5 py-2.5 bg-white border border-slate-300 text-slate-700 font-medium rounded-xl hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 transition-colors shadow-sm cursor-pointer"
           >
             Cancelar
@@ -561,5 +563,5 @@ const saveRoom = async () => {
         </div>
       </form>
     </div>
-  </AdminLayout>
+  </OrganizatorLayout>
 </template>

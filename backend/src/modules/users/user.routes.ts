@@ -9,9 +9,9 @@ const router = Router();
 // User profile
 router.get('/me', checkJwt, attachAuthUser, getMe);
 
-// Admin user management
-router.get('/admin/users', checkJwt, attachAuthUser, requireRole('admin', 'super-admin'), getAllUsersHandler);
-router.patch('/admin/users/:keycloakId/role', checkJwt, attachAuthUser, requireRole('super-admin'), updateUserRoleHandler);
-router.patch('/admin/users/:keycloakId/active', checkJwt, attachAuthUser, requireRole('admin', 'super-admin'), toggleUserActiveHandler);
+// Organizator user management
+router.get('/organizator/users', checkJwt, attachAuthUser, requireRole('organizator'), getAllUsersHandler);
+router.patch('/organizator/users/:keycloakId/role', checkJwt, attachAuthUser, requireRole('organizator'), updateUserRoleHandler);
+router.patch('/organizator/users/:keycloakId/active', checkJwt, attachAuthUser, requireRole('organizator'), toggleUserActiveHandler);
 
 export default router;

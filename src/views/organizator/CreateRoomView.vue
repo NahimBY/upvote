@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import AdminLayout from '../../layouts/AdminLayout.vue'
+import OrganizatorLayout from '../../layouts/OrganizatorLayout.vue'
 import {
   Plus,
   Trash2,
@@ -10,7 +10,7 @@ import {
   Users,
   Image as ImageIcon,
   ChevronRight,
-  ChevronDown
+  ChevronDown,
 } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
 import { apiFetch } from '../../utils/apiFetch'
@@ -48,47 +48,47 @@ const createElection = async () => {
       startDate: new Date(formData.value.startDate).toISOString(),
       endDate: new Date(formData.value.endDate).toISOString(),
       allowResultsBeforeClose: false,
-      maxSelections: formData.value.type === 'multiple_choice' ? candidates.value.length : 1
-    };
+      maxSelections: formData.value.type === 'multiple_choice' ? candidates.value.length : 1,
+    }
 
     if (formData.value.type !== 'yes_no') {
-      payload.options = candidates.value.map(c => ({
+      payload.options = candidates.value.map((c) => ({
         label: c.name,
-        description: c.acronym
-      }));
+        description: c.acronym,
+      }))
     }
 
-    const response = await apiFetch('/api/admin/elections', {
+    const response = await apiFetch('/api/organizator/elections', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
       },
-      body: JSON.stringify(payload)
-    });
-    
+      body: JSON.stringify(payload),
+    })
+
     if (!response.ok) {
-      const err = await response.json();
-      throw new Error(err.message || 'Error de la petición');
+      const err = await response.json()
+      throw new Error(err.message || 'Error de la petición')
     }
 
-    const data = await response.json();
-    console.log('Creada:', data);
-    router.push('/admin/rooms');
+    const data = await response.json()
+    console.log('Creada:', data)
+    router.push('/organizator/rooms')
   } catch (error) {
-    console.error('Error creating election:', error);
-    alert('No se pudo crear la sala. Verifica los datos.');
+    console.error('Error creating election:', error)
+    alert('No se pudo crear la sala. Verifica los datos.')
   }
 }
 </script>
 
 <template>
-  <AdminLayout>
+  <OrganizatorLayout>
     <div class="max-w-4xl mx-auto space-y-6 pb-12">
       <!-- Header -->
       <div class="mb-8">
         <div class="flex items-center gap-3 mb-4">
           <button
-            @click="$router.push('/admin/rooms')"
+            @click="$router.push('/organizator/rooms')"
             class="text-sm font-medium text-slate-500 cursor-pointer hover:text-slate-600 transition-colors"
           >
             Salas de Votación
@@ -329,7 +329,8 @@ const createElection = async () => {
         <div class="flex items-center justify-end pt-6 border-t border-slate-200 space-x-4">
           <button
             type="button"
-            class="px-5 py-2.5 bg-white border border-slate-300 text-slate-700 font-medium rounded-xl hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 transition-colors shadow-sm cursor-pointer" @click="$router.push('/admin/rooms')"
+            class="px-5 py-2.5 bg-white border border-slate-300 text-slate-700 font-medium rounded-xl hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 transition-colors shadow-sm cursor-pointer"
+            @click="$router.push('/organizator/rooms')"
           >
             Cancelar
           </button>
@@ -343,7 +344,7 @@ const createElection = async () => {
         </div>
       </form>
     </div>
-  </AdminLayout>
+  </OrganizatorLayout>
 </template>
 
 <style scoped>

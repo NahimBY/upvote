@@ -3,10 +3,10 @@ import LoginView from '../views/auth/LoginView.vue'
 import RegisterView from '../views/auth/RegisterView.vue'
 import PasswordRecoveryView from '../views/auth/PasswordRecoveryView.vue'
 
-import AdminDashboardView from '../views/admin/DashboardView.vue'
-import ManageRoomsView from '../views/admin/ManageRoomsView.vue'
-import CreateRoomView from '../views/admin/CreateRoomView.vue'
-import EditRoomView from '../views/admin/EditRoomView.vue'
+import OrganizatorDashboardView from '../views/organizator/DashboardView.vue'
+import ManageRoomsView from '../views/organizator/ManageRoomsView.vue'
+import CreateRoomView from '../views/organizator/CreateRoomView.vue'
+import EditRoomView from '../views/organizator/EditRoomView.vue'
 
 import DashboardView from '../views/dashboard/DashboardView.vue'
 import VotingRoomView from '../views/room/VotingRoomView.vue'
@@ -35,26 +35,26 @@ const router = createRouter({
       meta: { requiresAuth: true }
     },
     {
-      path: '/admin',
-      name: 'admin-dashboard',
-      component: AdminDashboardView,
+      path: '/organizator',
+      name: 'organizator-dashboard',
+      component: OrganizatorDashboardView,
       meta: { requiresAuth: true }
     },
     {
-      path: '/admin/rooms',
-      name: 'admin-rooms',
+      path: '/organizator/rooms',
+      name: 'organizator-rooms',
       component: ManageRoomsView,
       meta: { requiresAuth: true }
     },
     {
-      path: '/admin/rooms/create',
-      name: 'admin-create-room',
+      path: '/organizator/rooms/create',
+      name: 'organizator-create-room',
       component: CreateRoomView,
       meta: { requiresAuth: true }
     },
     {
-      path: '/admin/rooms/edit/:id',
-      name: 'admin-edit-room',
+      path: '/organizator/rooms/edit/:id',
+      name: 'organizator-edit-room',
       component: EditRoomView,
       meta: { requiresAuth: true }
     },
@@ -85,7 +85,7 @@ function getUserRole(): string | null {
     const decodedJson = atob(base64)
     const payload = JSON.parse(decodedJson)
     const roles = payload.realm_access?.roles || []
-    return roles.includes('admin') ? 'admin' : 'voter'
+    return roles.includes('organizator') ? 'organizator' : 'voter'
   } catch (error) {
     console.error('Error al decodificar el token:', error)
     return null
@@ -100,17 +100,17 @@ router.beforeEach((to, from, next) => {
   if (to.meta.requiresAuth && !isAuthenticated) {
     next({ name: 'login' })
   } else if (isAuthenticated && (to.name === 'login' || to.name === 'register' || to.path === '/')) {
-    if (userRole === 'admin') {
-      next({ path: '/admin' })
+    if (userRole === 'organizator') {
+      next({ path: '/organizator' })
     } else {
       next({ path: '/dashboard' })
     }
   } else {
-    // Prevent voters from accessing admin routes and vice-versa
-    if (to.path.startsWith('/admin') && userRole !== 'admin' && isAuthenticated) {
+    // Prevent voters from accessing organizator routes and vice-versa
+    if (to.path.startsWith('/organizator') && userRole !== 'organizator' && isAuthenticated) {
       next({ path: '/dashboard' })
-    } else if (to.path.startsWith('/dashboard') && userRole === 'admin' && isAuthenticated) {
-      next({ path: '/admin' })
+    } else if (to.path.startsWith('/dashboard') && userRole === 'organizator' && isAuthenticated) {
+      next({ path: '/organizator' })
     } else {
       next()
     }

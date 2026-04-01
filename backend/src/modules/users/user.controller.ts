@@ -18,7 +18,7 @@ export const getMe = asyncHandler(async (req: Request, res: Response) => {
     firstName: req.authUser.firstName || 'User',
     lastName: req.authUser.lastName || '',
     username: req.authUser.username || req.authUser.email || 'user',
-    role: req.authUser.realmRoles?.includes('super-admin') ? 'super-admin' : req.authUser.realmRoles?.includes('admin') ? 'admin' : 'voter',
+    role: req.authUser.realmRoles?.includes('super-admin') ? 'super-admin' : req.authUser.realmRoles?.includes('organizator') ? 'organizator' : 'voter',
     location: {},
     eligibilityTags: [],
     isActive: true
@@ -35,7 +35,7 @@ export const getAllUsersHandler = asyncHandler(async (req: Request, res: Respons
 });
 
 export const updateUserRoleHandler = asyncHandler(async (req: Request, res: Response) => {
-  const { role } = z.object({ role: z.enum(['super-admin', 'admin', 'voter']) }).parse(req.body);
+  const { role } = z.object({ role: z.enum(['super-admin', 'organizator', 'voter']) }).parse(req.body);
   const keycloakId = req.params.keycloakId as string;
 
   // Sync role in Keycloak
@@ -53,12 +53,12 @@ export const updateUserRoleHandler = asyncHandler(async (req: Request, res: Resp
     body: params.toString()
   });
   const tokenData: any = await tokenRes.json();
-  if (!tokenRes.ok) throw new ApiError(500, 'Failed to obtain admin token');
-  const adminToken = tokenData.access_token;
+  if (!tokenRes.ok) throw new ApiError(500, 'Failed to obtain organizator token');
+  const organizatorToken = tokenData.access_token;
 
-  const oldRole = role === 'admin' ? 'voter' : 'admin';
-  await removeRealmRole(adminToken, keycloakId, oldRole);
-  await assignRealmRole(adminToken, keycloakId, role);
+  const oldRole = role === 'organizator' ? 'voter' : 'organizator';
+  await removeRealmRole(organizatorToken, keycloakId, oldRole);
+  await assignRealmRole(organizatorToken, keycloakId, role);
 
   const user = await updateUserRole(keycloakId, role);
   res.json(new ApiResponse('User role updated', user));

@@ -9,7 +9,7 @@ import {
   logoutHandler,
   checkSessionHandler,
   getMeHandler,
-  adminOnlyHandler
+  organizatorOnlyHandler
 } from './auth.controller';
 
 const router = Router();
@@ -23,6 +23,6 @@ router.post('/auth/logout', logoutHandler);
 // Protected
 router.get('/auth/check', checkJwt, attachAuthUser, checkSessionHandler);
 router.get('/auth/me', checkJwt, attachAuthUser, getMeHandler);
-router.get('/auth/admin-only', checkJwt, attachAuthUser, requireRole('admin', 'super-admin'), adminOnlyHandler);
+router.get('/auth/organizator-only', checkJwt, attachAuthUser, requireRole('organizator'), organizatorOnlyHandler);
 
 export default router;

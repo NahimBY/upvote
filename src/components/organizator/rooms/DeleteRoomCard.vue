@@ -17,7 +17,7 @@ const emit = defineEmits(['roomDeleted', 'cancel']);
 
 const deleteRoom = async () => {
   try {
-    const response = await apiFetch(`/api/admin/elections/${props.id}`, {
+    const response = await apiFetch(`/api/organizator/elections/${props.id}`, {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json'

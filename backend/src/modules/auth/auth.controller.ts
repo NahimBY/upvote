@@ -43,7 +43,7 @@ async function keycloakTokenRequest(params: URLSearchParams) {
   return data;
 }
 
-async function getAdminToken(): Promise<string> {
+async function getOrganizatorToken(): Promise<string> {
   const params = new URLSearchParams();
   params.append('grant_type', 'client_credentials');
   params.append('client_id', env.keycloakClientId);
@@ -59,28 +59,27 @@ async function getAdminToken(): Promise<string> {
 
   const data = await response.json();
   if (!response.ok) {
-    console.error('Failed to get admin token:', data);
-    throw new ApiError(500, 'Failed to obtain admin token');
+    console.error('Failed to get organizator token:', data);
+    throw new ApiError(500, 'Failed to obtain organizator token');
   }
-  console.log('Admin API URL:', `${ADMIN_BASE}/admin/realms/${REALM}/users`);
   return (data as any).access_token;
 }
 
-async function getKeycloakUserId(adminToken: string, username: string): Promise<string> {
+async function getKeycloakUserId(organizatorToken: string, username: string): Promise<string> {
   const res = await fetch(
     `${ADMIN_BASE}/admin/realms/${REALM}/users?username=${encodeURIComponent(username)}&exact=true`,
-    { headers: { Authorization: `Bearer ${adminToken}` } }
+    { headers: { Authorization: `Bearer ${organizatorToken}` } }
   );
   const users: any[] = await res.json() as any[];
   if (!users.length) throw new ApiError(404, 'User not found in Keycloak');
   return users[0].id;
 }
 
-export async function assignRealmRole(adminToken: string, userId: string, roleName: string): Promise<void> {
+export async function assignRealmRole(organizatorToken: string, userId: string, roleName: string): Promise<void> {
   // Get the role representation
   const roleRes = await fetch(
     `${ADMIN_BASE}/admin/realms/${REALM}/roles/${encodeURIComponent(roleName)}`,
-    { headers: { Authorization: `Bearer ${adminToken}` } }
+    { headers: { Authorization: `Bearer ${organizatorToken}` } }
   );
   if (!roleRes.ok) throw new ApiError(400, `Realm role '${roleName}' not found in Keycloak`);
   const role = await roleRes.json();
@@ -92,7 +91,7 @@ export async function assignRealmRole(adminToken: string, userId: string, roleNa
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${adminToken}`
+        Authorization: `Bearer ${organizatorToken}`
       },
       body: JSON.stringify([role])
     }
@@ -103,10 +102,10 @@ export async function assignRealmRole(adminToken: string, userId: string, roleNa
   }
 }
 
-export async function removeRealmRole(adminToken: string, userId: string, roleName: string): Promise<void> {
+export async function removeRealmRole(organizatorToken: string, userId: string, roleName: string): Promise<void> {
   const roleRes = await fetch(
     `${ADMIN_BASE}/admin/realms/${REALM}/roles/${encodeURIComponent(roleName)}`,
-    { headers: { Authorization: `Bearer ${adminToken}` } }
+    { headers: { Authorization: `Bearer ${organizatorToken}` } }
   );
   if (!roleRes.ok) return; // Role doesn't exist, nothing to remove
   const role = await roleRes.json();
@@ -117,7 +116,7 @@ export async function removeRealmRole(adminToken: string, userId: string, roleNa
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${adminToken}`
+        Authorization: `Bearer ${organizatorToken}`
       },
       body: JSON.stringify([role])
     }
@@ -169,7 +168,7 @@ export const loginHandler = asyncHandler(async (req: Request, res: Response) => 
     firstName: payload.given_name || '',
     lastName: payload.family_name || '',
     username: payload.preferred_username || email,
-    role: roles.includes('super-admin') ? 'super-admin' : roles.includes('admin') ? 'admin' : 'voter',
+    role: roles.includes('super-admin') ? 'super-admin' : roles.includes('organizator') ? 'organizator' : 'voter',
     location: {},
     eligibilityTags: [],
     isActive: true
@@ -188,8 +187,8 @@ export const loginHandler = asyncHandler(async (req: Request, res: Response) => 
 export const registerHandler = asyncHandler(async (req: Request, res: Response) => {
   const { email, username, firstName, lastName, password } = registerSchema.parse(req.body);
 
-  // Get admin token to create user via Keycloak Admin API
-  const adminToken = await getAdminToken();
+  // Get organizator token to create user via Keycloak Admin API
+  const organizatorToken = await getOrganizatorToken();
 
   // Create user in Keycloak
   const createUserRes = await fetch(
@@ -198,7 +197,7 @@ export const registerHandler = asyncHandler(async (req: Request, res: Response) 
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${adminToken}`
+        Authorization: `Bearer ${organizatorToken}`
       },
       body: JSON.stringify({
         email,
@@ -233,8 +232,8 @@ export const registerHandler = asyncHandler(async (req: Request, res: Response) 
   }
 
   // Assign 'voter' realm role in Keycloak
-  const kcUserId = await getKeycloakUserId(adminToken, username);
-  await assignRealmRole(adminToken, kcUserId, 'voter');
+  const kcUserId = await getKeycloakUserId(organizatorToken, username);
+  await assignRealmRole(organizatorToken, kcUserId, 'voter');
 
   // Auto-login after registration
   const params = new URLSearchParams();
@@ -322,6 +321,6 @@ export const checkSessionHandler = asyncHandler(async (_req: Request, res: Respo
   res.json(new ApiResponse('Session is valid'));
 });
 
-export const adminOnlyHandler = asyncHandler(async (_req: Request, res: Response) => {
-  res.json(new ApiResponse('Admin access granted'));
+export const organizatorOnlyHandler = asyncHandler(async (_req: Request, res: Response) => {
+  res.json(new ApiResponse('Organizator access granted'));
 });

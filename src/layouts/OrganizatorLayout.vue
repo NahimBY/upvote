@@ -18,11 +18,10 @@ const route = useRoute()
 const router = useRouter()
 
 const navigation = [
-  { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
-  { name: 'Salas de Votación', href: '/admin/rooms', icon: Building2 },
-  // { name: 'Usuarios', href: '/admin/users', icon: Users },
-  { name: 'Estadísticas', href: '/admin/statistics', icon: ChartBar },
-  { name: 'Configuración', href: '/admin/settings', icon: Settings },
+  { name: 'Dashboard', href: '/organizator', icon: LayoutDashboard },
+  { name: 'Salas de Votación', href: '/organizator/rooms', icon: Building2 },
+  { name: 'Estadísticas', href: '/organizator/statistics', icon: ChartBar },
+  { name: 'Configuración', href: '/organizator/settings', icon: Settings },
 ]
 
 const userName = ref('Usuario')
@@ -79,7 +78,7 @@ const handleLogout = () => {
             <CheckCircle2 class="w-5 h-5" stroke-width="3" />
           </span>
           <span class="text-xl font-bold text-white tracking-tight"
-            >UpVote <span class="text-emerald-400">Admin</span></span
+            >UpVote <span class="text-emerald-400">Organizator</span></span
           >
         </div>
         <button
@@ -98,7 +97,7 @@ const handleLogout = () => {
           @click="isMobileMenuOpen = false"
           class="flex items-center px-3 py-2.5 rounded-lg font-medium transition-colors group w-full"
           :class="[
-            route.path === item.href || (item.href !== '/admin' && route.path.startsWith(item.href))
+            route.path === item.href || (item.href !== '/organizator' && route.path.startsWith(item.href))
               ? 'bg-emerald-600 text-white shadow-sm'
               : 'text-slate-300 hover:bg-slate-800 hover:text-white',
           ]"
@@ -108,7 +107,7 @@ const handleLogout = () => {
             class="w-5 h-5 mr-3 flex-shrink-0 transition-colors"
             :class="
               route.path === item.href ||
-              (item.href !== '/admin' && route.path.startsWith(item.href))
+              (item.href !== '/organizator' && route.path.startsWith(item.href))
                 ? 'text-emerald-200'
                 : 'text-slate-400 group-hover:text-white'
             "
@@ -157,7 +156,7 @@ const handleLogout = () => {
       >
         <div class="flex items-center text-sm text-slate-500 font-medium">
           <!-- Optional breadcrumbs could go here -->
-          <!-- Gestión Administrativa -->
+          <!-- Gestión Organizativa -->
         </div>
         <div class="flex items-center space-x-4">
           <div class="text-sm font-medium text-slate-700">{{ userName }}</div>
