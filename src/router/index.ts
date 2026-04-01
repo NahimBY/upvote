@@ -92,6 +92,7 @@ function getUserRole(): string | null {
     const decodedJson = atob(base64)
     const payload = JSON.parse(decodedJson)
     const roles = payload.realm_access?.roles || []
+    if (roles.includes('admin')) return 'admin'
     return roles.includes('organizator') ? 'organizator' : 'voter'
   } catch (error) {
     console.error('Error al decodificar el token:', error)

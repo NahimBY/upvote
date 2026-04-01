@@ -166,7 +166,7 @@ export const getEligibleElectionsHandler = asyncHandler(async (req: Request, res
     firstName: req.authUser.firstName || 'User',
     lastName: req.authUser.lastName || '',
     username: req.authUser.username || req.authUser.email || 'user',
-    role: req.authUser.realmRoles?.includes('organizator') ? 'organizator' : 'voter',
+    role: req.authUser.realmRoles?.includes('admin') ? 'admin' : req.authUser.realmRoles?.includes('organizator') ? 'organizator' : 'voter',
     location: {},
     eligibilityTags: [],
     isActive: true

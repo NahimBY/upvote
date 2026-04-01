@@ -253,7 +253,7 @@ export const loginHandler = asyncHandler(async (req: Request, res: Response) => 
     firstName: payload.given_name || '',
     lastName: payload.family_name || '',
     username: payload.preferred_username || email,
-    role: roles.includes('super-admin') ? 'super-admin' : roles.includes('organizator') ? 'organizator' : 'voter',
+    role: roles.includes('admin') ? 'admin' : roles.includes('organizator') ? 'organizator' : 'voter',
     location: {},
     eligibilityTags: [],
     isActive: true
