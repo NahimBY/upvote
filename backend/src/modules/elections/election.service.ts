@@ -73,7 +73,7 @@ export async function updateElection(id: string, data: Partial<IElection>) {
 export async function deleteElection(id: string) {
   const election = await ElectionModel.findById(id);
   if (!election) throw new ApiError(404, 'Election not found');
-  if (election.status !== 'draft') throw new ApiError(400, 'Can only delete elections in draft status');
+  // if (election.status !== 'draft') throw new ApiError(400, 'Can only delete elections in draft status');
   return ElectionModel.findByIdAndDelete(id);
 }
 

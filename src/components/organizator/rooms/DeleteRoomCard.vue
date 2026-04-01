@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { defineComponent } from 'vue';
 import { apiFetch } from '../../../utils/apiFetch';
 
 const props = defineProps({
@@ -23,13 +22,13 @@ const deleteRoom = async () => {
         'Content-Type': 'application/json'
       }
     });
-        if (response.ok) {
-          emit('roomDeleted', props.id);
-        }
-      } catch (error) {
-        console.error('Error deleting room:', error);
-      }
+    if (response.ok) {
+      emit('roomDeleted', props.id);
     }
+  } catch (error) {
+    console.error('Error deleting room:', error);
+  }
+}
 </script>
 
 <template>
