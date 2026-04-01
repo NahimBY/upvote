@@ -8,8 +8,8 @@ import ManageRoomsView from '../views/organizator/ManageRoomsView.vue'
 import CreateRoomView from '../views/organizator/CreateRoomView.vue'
 import EditRoomView from '../views/organizator/EditRoomView.vue'
 
-import DashboardView from '../views/dashboard/DashboardView.vue'
-import VotingRoomView from '../views/room/VotingRoomView.vue'
+import DashboardView from '../views/voter/DashboardView.vue'
+import VotingRoomView from '../views/voter/VotingRoomView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),

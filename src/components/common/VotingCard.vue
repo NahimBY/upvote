@@ -16,11 +16,11 @@ defineProps<{
 const getStatusText = (status: string) => {
   switch (status) {
     case 'open':
-      return 'Abierta'
+      return 'En curso'
     case 'closed':
-      return 'Cerrada'
+      return 'Finalizada'
     case 'published':
-      return 'Publicada'
+      return 'Próxima'
     default:
       return status
   }
@@ -33,7 +33,7 @@ const getStatusClasses = (status: string) => {
     case 'closed':
       return 'bg-red-500/10 text-red-400 border border-red-500/20'
     case 'published':
-      return 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
+      return 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
     default:
       return 'bg-slate-700 text-slate-400 border border-slate-600'
   }

@@ -185,7 +185,7 @@ const refreshElections = async () => {
       <!-- Header -->
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Administrar Salas</h1>
+          <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Administrar salas</h1>
           <p class="mt-1 text-sm text-slate-500">
             Gestiona, edita y supervisa las salas de votación de tu organización.
           </p>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, onUnmounted } from 'vue'
 import {
   UserCircle,
   LogOut,
@@ -69,8 +69,6 @@ const fetchElections = async () => {
   }
 }
 
-fetchElections()
-
 const fetchMyVotes = async () => {
   try {
     const response = await apiFetch('/api/votes/my')
@@ -101,12 +99,9 @@ const fetchMyVotes = async () => {
   }
 }
 
-fetchMyVotes()
-
-// Search logic
 const searchQuery = ref('')
 const showFilterMenu = ref(false)
-const activeFilter = ref<'all' | 'open' | 'published'>('all')
+const activeFilter = ref<'all' | 'open' | 'published' | 'closed'>('all')
 
 const filteredActiveVotes = computed(() => {
   let result = activeVotes.value
@@ -133,6 +128,9 @@ const handleLogout = () => {
 
 const userName = ref('Usuario')
 
+
+let pollInterval: number | null = null
+
 onMounted(() => {
   const token = localStorage.getItem('accessToken')
   if (token) {
@@ -155,6 +153,20 @@ onMounted(() => {
       console.error('Error al decodificar el token', error)
       userName.value = 'Usuario'
     }
+  }
+
+  fetchElections()
+  fetchMyVotes()
+
+  pollInterval = window.setInterval(() => {
+    fetchElections()
+    fetchMyVotes()
+  }, 10000)
+})
+
+onUnmounted(() => {
+  if (pollInterval) {
+    clearInterval(pollInterval)
   }
 })
 </script>
@@ -240,7 +252,7 @@ onMounted(() => {
         <div class="mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <h2 class="text-2xl font-bold text-white tracking-tight flex items-center gap-2">
             <LayoutDashboard class="w-6 h-6 text-emerald-500" />
-            Votaciones Activas
+            Votaciones
           </h2>
           <div class="flex flex-wrap gap-2">
             <span v-if="openElectionsCount > 0"
@@ -303,6 +315,12 @@ onMounted(() => {
                 >
                   <span class="block flex items-center"><div class="w-2 h-2 rounded-full bg-amber-500 mr-2 shadow-[0_0_8px_rgb(245,158,11)]"></div> Próximos (Publicados)</span>
                 </button>
+                <button 
+                  @click="activeFilter = 'closed'; showFilterMenu = false" 
+                  :class="['w-full text-left px-5 py-3 text-sm transition-colors', activeFilter === 'closed' ? 'text-red-400 bg-red-500/20 font-bold' : 'text-slate-300 hover:bg-slate-700/50']"
+                >
+                  <span class="block flex items-center"><div class="w-2 h-2 rounded-full bg-red-500 mr-2 shadow-[0_0_8px_rgb(239,68,68)]"></div> Finalizadas</span>
+                </button>
               </div>
             </div>
           </div>
@@ -327,7 +345,7 @@ onMounted(() => {
 
         <!-- Estado Vacío -->
         <div
-          v-else
+          v-else-if="filteredActiveVotes.length === 0 && activeVotes.length > 0 && activeFilter === 'all'"
           class="bg-slate-800/50 rounded-2xl border border-slate-700/50 p-12 text-center flex flex-col items-center justify-center"
         >
           <div
@@ -347,6 +365,27 @@ onMounted(() => {
             class="mt-6 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-sm font-medium transition-colors border border-slate-700"
           >
             Borrar búsqueda
+          </button>
+        </div>
+
+        <div
+          v-if="filteredActiveVotes.length === 0 && activeVotes.length > 0 && activeFilter !== 'all'"
+          class="bg-slate-800/50 rounded-2xl border border-slate-700/50 p-12 text-center flex flex-col items-center justify-center"
+        >
+          <div
+            class="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center mb-4 border border-slate-700"
+          >
+            <Filter class="w-8 h-8 text-slate-500" />
+          </div>
+          <h3 class="text-lg font-bold text-white mb-2">No hay votaciones con ese filtro</h3>
+          <p class="text-slate-400 max-w-sm mx-auto">
+            No pudimos encontrar votaciones que coincidan con tu filtro actual. Intenta cambiar el filtro o la búsqueda.
+          </p>
+          <button
+            @click="activeFilter = 'all'"
+            class="mt-6 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-sm font-medium transition-colors border border-slate-700"
+          >
+            Ver todas
           </button>
         </div>
       </section>

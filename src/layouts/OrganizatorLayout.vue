@@ -32,19 +32,24 @@ onMounted(() => {
     try {
       const payloadBase64 = token.split('.')[1]
       if (!payloadBase64) throw new Error('Invalid token format')
-      
-      const payloadDecoded = decodeURIComponent(atob(payloadBase64).split('').map(function(c) {
-          return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-      }).join(''));
-      
-      const payload = JSON.parse(payloadDecoded);
-      userName.value = payload.name || payload.given_name || payload.preferred_username || 'Usuario';
+
+      const payloadDecoded = decodeURIComponent(
+        atob(payloadBase64)
+          .split('')
+          .map(function (c) {
+            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)
+          })
+          .join(''),
+      )
+
+      const payload = JSON.parse(payloadDecoded)
+      userName.value = payload.name || payload.given_name || payload.preferred_username || 'Usuario'
     } catch (error) {
-      console.error('Error al decodificar el token', error);
-      userName.value = 'Usuario';
+      console.error('Error al decodificar el token', error)
+      userName.value = 'Usuario'
     }
   }
-});
+})
 
 const handleLogout = () => {
   localStorage.removeItem('accessToken')
@@ -71,15 +76,16 @@ const handleLogout = () => {
       <div
         class="flex items-center justify-between h-16 px-6 bg-slate-950 border-b border-slate-800"
       >
-        <div class="flex items-center space-x-2">
-          <span
-            class="w-8 h-8 rounded-lg bg-emerald-500 flex items-center justify-center text-slate-900 shadow-md"
-          >
-            <CheckCircle2 class="w-5 h-5" stroke-width="3" />
+        <div class="flex items-center cursor-pointer" @click="router.push('/dashboard')">
+          <span class="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
+            <span
+              class="w-8 h-8 rounded-lg bg-emerald-500 flex items-center justify-center text-slate-900 shadow-[0_0_15px_rgba(16,185,129,0.4)]"
+            >
+              <CheckCircle2 class="w-5 h-5" stroke-width="3" />
+            </span>
+            UpVote
           </span>
-          <span class="text-xl font-bold text-white tracking-tight"
-            >UpVote <span class="text-emerald-400">Organizator</span></span
-          >
+          <span class="text-xl font-bold text-emerald-400 tracking-tight ml-2">Organizator</span>
         </div>
         <button
           @click="isMobileMenuOpen = false"
@@ -97,7 +103,8 @@ const handleLogout = () => {
           @click="isMobileMenuOpen = false"
           class="flex items-center px-3 py-2.5 rounded-lg font-medium transition-colors group w-full"
           :class="[
-            route.path === item.href || (item.href !== '/organizator' && route.path.startsWith(item.href))
+            route.path === item.href ||
+            (item.href !== '/organizator' && route.path.startsWith(item.href))
               ? 'bg-emerald-600 text-white shadow-sm'
               : 'text-slate-300 hover:bg-slate-800 hover:text-white',
           ]"
