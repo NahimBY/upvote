@@ -88,7 +88,7 @@
       },
       {
         "id": "22d59bec-2ce6-4426-9565-224fcd4f3f9e",
-        "name": "admin",
+        "name": "organizator",
         "description": "",
         "composite": false,
         "clientRole": false,
@@ -105,8 +105,8 @@
         "attributes": {}
       },
       {
-        "name": "super-admin",
-        "description": "Super administrator with full access",
+        "name": "admin",
+        "description": "Administrator with full access",
         "composite": false,
         "clientRole": false
       }
