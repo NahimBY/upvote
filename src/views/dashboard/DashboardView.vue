@@ -23,18 +23,17 @@ interface ActiveVote {
   status: string
 }
 
-const activeVotes = ref<ActiveVote[]>([])
-const activeTab = ref<'activas' | 'historial'>('activas')
+interface MyVote {
+  id: string
+  electionId: string
+  title: string
+  status: string
+  submittedAt: string
+}
 
-const historyVotes = ref([
-  {
-    id: 101,
-    title: 'Elección Centro de Estudiantes 2025',
-    date: '10 Nov 2025',
-    status: 'Confirmado',
-  },
-  { id: 102, title: 'Encuesta de Satisfacción Comedor', date: '15 Sep 2025', status: 'Confirmado' },
-])
+const activeVotes = ref<ActiveVote[]>([])
+const myVotes = ref<MyVote[]>([])
+const activeTab = ref<'activas' | 'historial'>('activas')
 
 const fetchElections = async () => {
   try {
@@ -42,8 +41,14 @@ const fetchElections = async () => {
     if (response.ok) {
       const result = await response.json()
       activeVotes.value = result.data.map((election: any) => {
-        const date = new Date(election.endDate)
-        const formattedDate = date.toLocaleDateString('es-ES', {
+        const startDate = new Date(election.startDate)
+        const formattedStartDate = startDate.toLocaleDateString('es-ES', {
+          day: '2-digit',
+          month: 'short',
+          year: 'numeric',
+        })
+        const endDate = new Date(election.endDate)
+        const formattedEndDate = endDate.toLocaleDateString('es-ES', {
           day: '2-digit',
           month: 'short',
           year: 'numeric',
@@ -53,8 +58,8 @@ const fetchElections = async () => {
           id: election._id,
           title: election.title,
           description: election.description,
-          startDate: formattedDate,
-          endDate: formattedDate,
+          startDate: formattedStartDate,
+          endDate: formattedEndDate,
           status: election.status,
         }
       })
@@ -66,14 +71,59 @@ const fetchElections = async () => {
 
 fetchElections()
 
+const fetchMyVotes = async () => {
+  try {
+    const response = await apiFetch('/api/votes/my')
+    if (response.ok) {
+      const result = await response.json()
+      myVotes.value = result.data.map((vote: any) => {
+        const submitDate = new Date(vote.submittedAt)
+        const formattedSubmitDate = submitDate.toLocaleDateString('es-ES', {
+          day: '2-digit',
+          month: 'short',
+          year: 'numeric'
+        }) + ', ' + submitDate.toLocaleTimeString('es-ES', {
+          hour: '2-digit',
+          minute: '2-digit'
+        })
+
+        return {
+          id: vote._id,
+          electionId: vote.election?._id || 'Elección desconocida',
+          title: vote.election?.title || 'Elección desconocida',
+          status: 'Confirmado',
+          submittedAt: formattedSubmitDate
+        }
+      })
+    }
+  } catch (error) {
+    console.error('Error al obtener el historial de votos:', error)
+  }
+}
+
+fetchMyVotes()
+
 // Search logic
 const searchQuery = ref('')
+const showFilterMenu = ref(false)
+const activeFilter = ref<'all' | 'open' | 'published'>('all')
+
 const filteredActiveVotes = computed(() => {
-  if (!searchQuery.value) return activeVotes.value
-  return activeVotes.value.filter((vote) =>
-    vote.title.toLowerCase().includes(searchQuery.value.toLowerCase()),
-  )
+  let result = activeVotes.value
+
+  if (activeFilter.value !== 'all') {
+    result = result.filter(v => v.status === activeFilter.value)
+  }
+
+  if (searchQuery.value) {
+    result = result.filter(v => v.title.toLowerCase().includes(searchQuery.value.toLowerCase()))
+  }
+
+  return result
 })
+
+const openElectionsCount = computed(() => activeVotes.value.filter(v => v.status === 'open').length)
+const publishedElectionsCount = computed(() => activeVotes.value.filter(v => v.status === 'published').length)
 
 const handleLogout = () => {
   localStorage.removeItem('accessToken')
@@ -115,11 +165,9 @@ onMounted(() => {
     <nav class="bg-slate-800 border-b border-slate-700/50 sticky top-0 z-10 shadow-sm">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16">
-          <div class="flex items-center">
+          <div class="flex items-center cursor-pointer" @click="router.push('/dashboard')">
             <span class="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
-              <span
-                class="w-8 h-8 rounded-lg bg-emerald-500 flex items-center justify-center text-slate-900 shadow-md"
-              >
+              <span class="w-8 h-8 rounded-lg bg-emerald-500 flex items-center justify-center text-slate-900 shadow-[0_0_15px_rgba(16,185,129,0.4)]">
                 <CheckCircle2 class="w-5 h-5" stroke-width="3" />
               </span>
               UpVote
@@ -194,10 +242,16 @@ onMounted(() => {
             <LayoutDashboard class="w-6 h-6 text-emerald-500" />
             Votaciones Activas
           </h2>
-          <span
-            class="text-sm font-medium text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20"
-            >{{ activeVotes.length }} procesos abiertos</span
-          >
+          <div class="flex flex-wrap gap-2">
+            <span v-if="openElectionsCount > 0"
+              class="text-sm font-medium text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20 shadow-[0_0_10px_rgba(16,185,129,0.2)]"
+              >{{ openElectionsCount }} en curso</span
+            >
+            <span v-if="publishedElectionsCount > 0"
+              class="text-sm font-medium text-amber-400 bg-amber-500/10 px-3 py-1 rounded-full border border-amber-500/20 shadow-[0_0_10px_rgba(245,158,11,0.2)]"
+              >{{ publishedElectionsCount }} próximas</span
+            >
+          </div>
         </div>
 
         <!-- Barra de búsqueda -->
@@ -216,11 +270,41 @@ onMounted(() => {
                 placeholder="Buscar por nombre de elección..."
               />
             </div>
-            <button
-              class="ml-2 px-4 py-3 bg-slate-800 text-white rounded-xl hover:bg-slate-700 transition-colors"
-            >
-              <Filter class="w-5 h-5 text-slate-400" />
-            </button>
+            <div class="relative ml-2">
+              <button
+                @click="showFilterMenu = !showFilterMenu"
+                :class="[
+                  'px-4 py-3 rounded-xl transition-all duration-300 flex items-center justify-center h-full',
+                  showFilterMenu || activeFilter !== 'all' 
+                    ? 'bg-emerald-500/20 text-emerald-400 borderborder-emerald-500/50 shadow-[0_0_15px_rgba(16,185,129,0.3)]' 
+                    : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white border border-slate-700/50 hover:border-slate-500/50'
+                ]"
+              >
+                <Filter class="w-5 h-5" />
+              </button>
+              
+              <!-- Menú Desplegable -->
+              <div v-if="showFilterMenu" class="absolute right-0 mt-2 w-56 bg-slate-800 rounded-xl border border-slate-700/80 shadow-2xl overflow-hidden z-20 animate-in fade-in slide-in-from-top-2 duration-200">
+                <button 
+                  @click="activeFilter = 'all'; showFilterMenu = false" 
+                  :class="['w-full text-left px-5 py-3 text-sm transition-colors border-b border-slate-700/50', activeFilter === 'all' ? 'text-emerald-400 bg-slate-700/80 font-bold' : 'text-slate-300 hover:bg-slate-700/50']"
+                >
+                  <span class="block">Todos los procesos</span>
+                </button>
+                <button 
+                  @click="activeFilter = 'open'; showFilterMenu = false" 
+                  :class="['w-full text-left px-5 py-3 text-sm transition-colors border-b border-slate-700/50', activeFilter === 'open' ? 'text-emerald-400 bg-slate-700/80 font-bold' : 'text-slate-300 hover:bg-slate-700/50']"
+                >
+                  <span class="block flex items-center"><div class="w-2 h-2 rounded-full bg-emerald-500 mr-2 shadow-[0_0_8px_rgb(16,185,129)]"></div> Solo en curso</span>
+                </button>
+                <button 
+                  @click="activeFilter = 'published'; showFilterMenu = false" 
+                  :class="['w-full text-left px-5 py-3 text-sm transition-colors', activeFilter === 'published' ? 'text-amber-400 bg-amber-500/20 font-bold' : 'text-slate-300 hover:bg-slate-700/50']"
+                >
+                  <span class="block flex items-center"><div class="w-2 h-2 rounded-full bg-amber-500 mr-2 shadow-[0_0_8px_rgb(245,158,11)]"></div> Próximos (Publicados)</span>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -303,19 +387,20 @@ onMounted(() => {
               </thead>
               <tbody class="divide-y divide-slate-700/50">
                 <tr
-                  v-for="item in historyVotes"
+                  v-for="item in myVotes"
                   :key="item.id"
                   class="hover:bg-slate-700/30 transition-colors group"
                 >
                   <td class="px-6 py-4 whitespace-nowrap">
                     <div
-                      class="text-sm font-medium text-slate-200 group-hover:text-white transition-colors"
+                      @click="router.push(`/election/${item.electionId}`)"
+                      class="text-sm font-medium text-slate-200 group-hover:text-white transition-colors cursor-pointer"
                     >
                       {{ item.title }}
                     </div>
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap">
-                    <div class="text-sm text-slate-400">{{ item.date }}</div>
+                    <div class="text-sm text-slate-400">{{ item.submittedAt }}</div>
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap">
                     <span

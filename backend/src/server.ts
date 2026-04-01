@@ -1,7 +1,7 @@
 import app from './app';
 import { connectDB } from './config/db';
 import { env } from './config/env';
-import { closeExpiredElections } from './modules/elections/election.service';
+import { closeExpiredElections, openScheduledElections } from './modules/elections/election.service';
 
 const ELECTION_CHECK_INTERVAL = 60 * 1000; // 1 minute
 
@@ -14,10 +14,13 @@ async function bootstrap() {
 
     setInterval(async () => {
       try {
+        const opened = await openScheduledElections();
+        if (opened > 0) console.log(`Auto-opened ${opened} scheduled election(s)`);
+
         const closed = await closeExpiredElections();
         if (closed > 0) console.log(`Auto-closed ${closed} expired election(s)`);
       } catch (err) {
-        console.error('Error closing expired elections:', err);
+        console.error('Error in election background tasks:', err);
       }
     }, ELECTION_CHECK_INTERVAL);
   } catch (error) {

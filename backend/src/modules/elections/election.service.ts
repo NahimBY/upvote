@@ -112,6 +112,14 @@ export async function closeExpiredElections(): Promise<number> {
   return result.modifiedCount;
 }
 
+export async function openScheduledElections(): Promise<number> {
+  const result = await ElectionModel.updateMany(
+    { status: 'published', startDate: { $lte: new Date() } },
+    { status: 'open' }
+  );
+  return result.modifiedCount;
+}
+
 export async function closeElectionIfMaxVotesReached(electionId: string): Promise<boolean> {
   const election = await ElectionModel.findById(electionId);
   if (!election || election.status !== 'open' || !election.maxVotes) return false;

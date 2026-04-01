@@ -1,12 +1,15 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import LoginView from '../views/auth/LoginView.vue'
 import RegisterView from '../views/auth/RegisterView.vue'
-import DashboardView from '../views/dashboard/DashboardView.vue'
+import PasswordRecoveryView from '../views/auth/PasswordRecoveryView.vue'
 
 import AdminDashboardView from '../views/admin/DashboardView.vue'
 import ManageRoomsView from '../views/admin/ManageRoomsView.vue'
 import CreateRoomView from '../views/admin/CreateRoomView.vue'
 import EditRoomView from '../views/admin/EditRoomView.vue'
+
+import DashboardView from '../views/dashboard/DashboardView.vue'
+import VotingRoomView from '../views/room/VotingRoomView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -54,6 +57,18 @@ const router = createRouter({
       name: 'admin-edit-room',
       component: EditRoomView,
       meta: { requiresAuth: true }
+    },
+    {
+      path: '/election/:id',
+      name: 'election',
+      component: VotingRoomView,
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/password-recovery',
+      name: 'password-recovery',
+      component: PasswordRecoveryView,
+      meta: { requiresAuth: false }
     }
   ],
 })
