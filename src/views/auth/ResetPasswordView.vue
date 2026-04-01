@@ -101,7 +101,7 @@ const handleSubmit = async () => {
 
       <!-- Success state -->
       <div v-else-if="resetSuccess" class="text-center space-y-4">
-        <div class="flex justify-center mb-2">
+        <div class="flex justify-center mb-5">
           <CheckCircle class="w-12 h-12 text-emerald-400" />
         </div>
         <div class="p-3 bg-emerald-500/10 border border-emerald-500/50 rounded-lg text-emerald-400 text-sm">
@@ -231,7 +231,7 @@ const handleSubmit = async () => {
         </button>
       </form>
 
-      <p class="mt-6 text-center text-sm text-slate-400">
+      <p v-if="!resetSuccess && !tokenInvalid" class="mt-6 text-center text-sm text-slate-400">
         <RouterLink
           to="/login"
           class="font-medium text-emerald-400 hover:text-emerald-300 transition-colors inline-flex items-center"

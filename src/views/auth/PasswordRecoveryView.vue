@@ -148,7 +148,7 @@ const handleSubmit = async () => {
         </button>
       </form>
 
-      <p class="mt-6 text-center text-sm text-slate-400">
+      <p v-if="!emailSent" class="mt-6 text-center text-sm text-slate-400">
         <RouterLink
           to="/login"
           class="font-medium text-emerald-400 hover:text-emerald-300 transition-colors inline-flex items-center"

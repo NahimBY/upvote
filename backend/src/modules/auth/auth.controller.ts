@@ -20,6 +20,7 @@ const REALM = env.keycloakIssuerBaseUrl.split('/realms/')[1]; // upvote
 function decodeJwtPayload(token: string): any {
   const base64 = token.split('.')[1];
   const json = Buffer.from(base64, 'base64url').toString('utf-8');
+  
   return JSON.parse(json);
 }
 
