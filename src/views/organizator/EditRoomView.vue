@@ -15,6 +15,7 @@ import {
   XCircle,
   AlertCircle,
   Loader2,
+  Image as ImageIcon,
 } from 'lucide-vue-next'
 
 const route = useRoute()
@@ -475,88 +476,144 @@ const saveRoom = async () => {
           </div>
         </div>
 
-        <!-- Options Card -->
-        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-          <div class="flex items-center justify-between mb-4">
-            <h3 class="text-lg font-semibold text-slate-900">Opciones de Votación</h3>
+        <!-- Dynamic Candidates Block -->
+        <div
+          v-if="type !== 'yes_no'"
+          class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden transition-shadow hover:shadow-md"
+        >
+          <div
+            class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50"
+          >
+            <div class="flex items-center">
+              <div class="p-2 bg-emerald-100 rounded-lg mr-3">
+                <Users class="w-5 h-5 text-emerald-600" />
+              </div>
+              <h2 class="text-lg font-semibold text-slate-900">Candidatos / Opciones</h2>
+            </div>
             <button
               type="button"
               @click="addOption"
-              class="inline-flex items-center px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 transition-colors"
+              class="inline-flex items-center px-4 py-2 bg-white border border-emerald-200 text-sm font-medium rounded-lg text-emerald-700 hover:bg-emerald-50 hover:border-emerald-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-colors shadow-sm"
             >
-              <Plus class="w-4 h-4 mr-1" />
-              Añadir
+              <Plus class="w-4 h-4 mr-2 text-emerald-500" />
+              Añadir Candidato
             </button>
           </div>
 
-          <div class="space-y-4">
-            <div
-              v-for="(option, index) in options"
-              :key="option.id || index"
-              class="bg-slate-50 p-4 rounded-lg border border-slate-200 relative"
-            >
-              <!-- Bloquea la eliminación si es una sala "yes_no" o solo oculta temporalmente -->
-              <button
-                v-if="type !== 'yes_no'"
-                type="button"
-                @click="removeOption(index)"
-                class="absolute top-3 right-3 text-slate-400 hover:text-red-500 transition-colors"
+          <div class="p-6">
+            <TransitionGroup name="list" tag="div" class="space-y-4">
+              <div
+                v-for="(option, index) in options"
+                :key="option.id || index"
+                class="flex flex-col sm:flex-row gap-4 p-5 border border-slate-200 rounded-xl bg-slate-50/50 relative group transition-all hover:bg-white hover:border-emerald-200 hover:shadow-sm"
               >
-                <Trash2 class="w-4 h-4" />
-              </button>
-
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label class="block text-xs font-medium text-slate-500 mb-1"
-                    >Nombre / Título</label
-                  >
-                  <input
-                    v-model="option.label"
-                    type="text"
-                    required
-                    :disabled="type === 'yes_no'"
-                    class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors disabled:bg-slate-100 disabled:text-slate-500"
-                    placeholder="Opción o candidato"
-                  />
+                <!-- Number Indicator -->
+                <div
+                  class="hidden sm:flex items-center justify-center w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 font-bold text-sm shrink-0 border border-emerald-200 shadow-sm mt-1"
+                >
+                  {{ index + 1 }}
                 </div>
-                <div>
-                  <label class="block text-xs font-medium text-slate-500 mb-1">Descripción</label>
-                  <input
-                    v-model="option.description"
-                    type="text"
-                    class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
-                    placeholder="Lema o detalle"
-                  />
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-5 flex-1">
+                  <!-- Nombre -->
+                  <div>
+                    <label
+                      class="block text-xs font-semibold text-slate-500 mb-1.5 uppercase tracking-wider"
+                      >Nombre</label
+                    >
+                    <input
+                      type="text"
+                      v-model="option.label"
+                      required
+                      class="block w-full px-4 py-2.5 border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white"
+                      placeholder="Ej. Ana Martínez"
+                    />
+                  </div>
+
+                  <!-- Siglas -->
+                  <div>
+                    <label
+                      class="block text-xs font-semibold text-slate-500 mb-1.5 uppercase tracking-wider"
+                      >Siglas o Partido</label
+                    >
+                    <input
+                      type="text"
+                      v-model="option.description"
+                      required
+                      class="block w-full px-4 py-2.5 border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white"
+                      placeholder="Ej. UNAM"
+                    />
+                  </div>
+
+                  <!-- URL Foto -->
+                  <div>
+                    <label
+                      class="block text-xs font-semibold text-slate-500 mb-1.5 uppercase tracking-wider"
+                      >URL Foto (Opcional)</label
+                    >
+                    <div class="relative">
+                      <input
+                        type="url"
+                        v-model="option.photoUrl"
+                        class="block w-full pl-10 pr-4 py-2.5 border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white"
+                        placeholder="https://..."
+                      />
+                      <ImageIcon
+                        class="w-5 h-5 text-slate-400 absolute left-3 top-2.5 pointer-events-none"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Eliminar Button -->
+                <div class="flex items-end justify-end sm:justify-start">
+                  <button
+                    type="button"
+                    @click="removeOption(index)"
+                    :disabled="options.length === 1"
+                    class="p-2.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors focus:outline-none disabled:opacity-30 disabled:hover:bg-transparent disabled:cursor-not-allowed border border-transparent hover:border-rose-200"
+                    title="Eliminar candidato"
+                  >
+                    <Trash2 class="w-5 h-5" />
+                  </button>
                 </div>
               </div>
-            </div>
+            </TransitionGroup>
 
-            <div v-if="options.length === 0" class="text-center py-8 text-slate-500">
-              <Users class="w-10 h-10 mx-auto mb-2 opacity-50" />
-              <p>No hay opciones aún. Añade una para comenzar.</p>
-            </div>
-            <div v-if="type === 'yes_no'" class="text-center text-xs text-slate-400">
-              * Esta votación es de tipo Sí/No, las encuestas de este tipo nacen con sus opciones
-              por defecto.
+            <!-- Empty State (Fallback - though we prevent deleting the last one usually) -->
+            <div
+              v-if="options.length === 0"
+              class="text-center py-10 bg-slate-50 rounded-xl border border-dashed border-slate-300"
+            >
+              <Users class="w-12 h-12 text-slate-300 mx-auto mb-3" />
+              <p class="text-slate-500 font-medium">No hay candidatos registrados.</p>
+              <button
+                type="button"
+                @click="addOption"
+                class="mt-3 text-emerald-600 hover:text-emerald-700 font-medium text-sm inline-flex items-center"
+              >
+                <Plus class="w-4 h-4 mr-1" />
+                Añadir el primer candidato
+              </button>
             </div>
           </div>
         </div>
 
-        <!-- Actions -->
-        <div class="flex flex-col sm:flex-row gap-3">
+        <!-- Bottom Action Bar -->
+        <div class="flex items-center justify-end pt-6 border-t border-slate-200 space-x-4">
           <button
             type="button"
-            @click="$router.push('/organizator/rooms')"
             class="px-5 py-2.5 bg-white border border-slate-300 text-slate-700 font-medium rounded-xl hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 transition-colors shadow-sm cursor-pointer"
+            @click="$router.push('/organizator/rooms')"
           >
             Cancelar
           </button>
           <button
             type="submit"
             :disabled="saving"
-            class="flex-1 sm:flex-none px-6 py-3 bg-emerald-600 text-white rounded-lg font-medium hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+            class="inline-flex items-center px-6 py-2.5 bg-emerald-600 text-white font-medium rounded-xl hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 transition-colors shadow-md cursor-pointer"
           >
-            <Save v-if="!saving" class="w-5 h-5 mr-2" />
+            <Save v-if="!saving" class="w-5 h-5 mr-2 -ml-1" />
             <Loader2 v-else class="w-5 h-5 mr-2 animate-spin" />
             Guardar Cambios
           </button>

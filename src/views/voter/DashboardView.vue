@@ -40,6 +40,7 @@ const fetchElections = async () => {
     const response = await apiFetch('/api/elections')
     if (response.ok) {
       const result = await response.json()
+      console.log(result)
       activeVotes.value = result.data.map((election: any) => {
         const startDate = new Date(election.startDate)
         const formattedStartDate = startDate.toLocaleDateString('es-ES', {
@@ -123,7 +124,7 @@ const publishedElectionsCount = computed(() => activeVotes.value.filter(v => v.s
 const handleLogout = () => {
   localStorage.removeItem('accessToken')
   localStorage.removeItem('refreshToken')
-  router.push('/login')
+  router.push('/')
 }
 
 const userName = ref('Usuario')

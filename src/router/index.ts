@@ -11,13 +11,15 @@ import EditRoomView from '../views/organizator/EditRoomView.vue'
 
 import DashboardView from '../views/voter/DashboardView.vue'
 import VotingRoomView from '../views/voter/VotingRoomView.vue'
+import LandingView from '../views/LandingView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
       path: '/',
-      redirect: '/login'
+      name: 'landing',
+      component: LandingView
     },
     {
       path: '/login',
@@ -107,7 +109,7 @@ router.beforeEach((to, from, next) => {
 
   if (to.meta.requiresAuth && !isAuthenticated) {
     next({ name: 'login' })
-  } else if (isAuthenticated && (to.name === 'login' || to.name === 'register' || to.path === '/')) {
+  } else if (isAuthenticated && (to.name === 'login' || to.name === 'register')) {
     if (userRole === 'organizator') {
       next({ path: '/organizator' })
     } else {

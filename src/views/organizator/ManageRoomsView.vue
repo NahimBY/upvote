@@ -177,6 +177,20 @@ const updateStatus = async (id: string, newStatus: string) => {
 const refreshElections = async () => {
   await fetchElections()
 }
+
+let pollInterval: number | null = null
+
+onMounted(() => {
+  pollInterval = window.setInterval(() => {
+    fetchElections()
+  }, 10000)
+})
+
+onUnmounted(() => {
+  if (pollInterval) {
+    clearInterval(pollInterval)
+  }
+})
 </script>
 
 <template>
