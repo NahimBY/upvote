@@ -15,6 +15,8 @@ import {
   XCircle,
   AlertCircle,
   Loader2,
+  User,
+  AlignLeft,
   Image as ImageIcon,
 } from 'lucide-vue-next'
 
@@ -505,76 +507,68 @@ const saveRoom = async () => {
               <div
                 v-for="(option, index) in options"
                 :key="option.id || index"
-                class="flex flex-col sm:flex-row gap-4 p-5 border border-slate-200 rounded-xl bg-slate-50/50 relative group transition-all hover:bg-white hover:border-emerald-200 hover:shadow-sm"
+                class="flex flex-col sm:flex-row gap-5 p-5 border border-slate-200 rounded-2xl bg-white relative group transition-all duration-300 hover:border-emerald-300 hover:shadow-[0_8px_30px_-4px_rgba(16,185,129,0.12)] overflow-hidden pl-7"
               >
+                <!-- Elegante barra lateral animada -->
+                <div class="absolute left-0 top-0 bottom-0 w-1.5 bg-slate-200 group-hover:bg-emerald-500 transition-colors duration-300"></div>
+
                 <!-- Number Indicator -->
                 <div
-                  class="hidden sm:flex items-center justify-center w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 font-bold text-sm shrink-0 border border-emerald-200 shadow-sm mt-1"
+                  class="hidden sm:flex items-center justify-center w-9 h-9 rounded-xl bg-slate-50 text-slate-500 font-bold text-sm shrink-0 border border-slate-100 shadow-sm mt-1 group-hover:bg-emerald-50 group-hover:text-emerald-600 group-hover:border-emerald-100 transition-colors"
                 >
                   {{ index + 1 }}
                 </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-5 flex-1">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5 flex-1">
                   <!-- Nombre -->
-                  <div>
-                    <label
-                      class="block text-xs font-semibold text-slate-500 mb-1.5 uppercase tracking-wider"
-                      >Nombre</label
-                    >
-                    <input
-                      type="text"
-                      v-model="option.label"
-                      required
-                      class="block w-full px-4 py-2.5 border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white"
-                      placeholder="Ej. Ana Martínez"
-                    />
-                  </div>
-
-                  <!-- Siglas -->
-                  <div>
-                    <label
-                      class="block text-xs font-semibold text-slate-500 mb-1.5 uppercase tracking-wider"
-                      >Siglas o Partido</label
-                    >
-                    <input
-                      type="text"
-                      v-model="option.description"
-                      required
-                      class="block w-full px-4 py-2.5 border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white"
-                      placeholder="Ej. UNAM"
-                    />
-                  </div>
-
-                  <!-- URL Foto -->
-                  <div>
-                    <label
-                      class="block text-xs font-semibold text-slate-500 mb-1.5 uppercase tracking-wider"
-                      >URL Foto (Opcional)</label
-                    >
+                  <div class="relative group/input">
+                    <label class="block text-[11px] font-bold text-slate-500 mb-1.5 uppercase tracking-wider group-focus-within/input:text-emerald-600 transition-colors">
+                      Nombre del Candidato u Opción
+                    </label>
                     <div class="relative">
+                      <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 group-focus-within/input:text-emerald-500 transition-colors">
+                        <User class="w-4 h-4" />
+                      </div>
                       <input
-                        type="url"
-                        v-model="option.photoUrl"
-                        class="block w-full pl-10 pr-4 py-2.5 border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white"
-                        placeholder="https://..."
+                        type="text"
+                        v-model="option.label"
+                        required
+                        class="block w-full pl-10 pr-4 py-2.5 bg-slate-50/50 border border-slate-200 hover:border-slate-300 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 focus:bg-white transition-all sm:text-sm"
+                        placeholder="Ej. Ing. Ana Martínez / Planilla A"
                       />
-                      <ImageIcon
-                        class="w-5 h-5 text-slate-400 absolute left-3 top-2.5 pointer-events-none"
+                    </div>
+                  </div>
+
+                  <!-- Descripción -->
+                  <div class="relative group/input">
+                    <label class="block text-[11px] font-bold text-slate-500 mb-1.5 uppercase tracking-wider group-focus-within/input:text-emerald-600 transition-colors">
+                      Breve Descripción
+                    </label>
+                    <div class="relative">
+                      <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 group-focus-within/input:text-emerald-500 transition-colors">
+                        <AlignLeft class="w-4 h-4" />
+                      </div>
+                      <input
+                        type="text"
+                        v-model="option.description"
+                        required
+                        class="block w-full pl-10 pr-4 py-2.5 bg-slate-50/50 border border-slate-200 hover:border-slate-300 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 focus:bg-white transition-all sm:text-sm"
+                        placeholder="Ej. Estudiante de la Facultad de Ingeniería"
                       />
                     </div>
                   </div>
                 </div>
 
                 <!-- Eliminar Button -->
-                <div class="flex items-end justify-end sm:justify-start">
+                <div class="flex items-center justify-end sm:pl-2">
                   <button
                     type="button"
                     @click="removeOption(index)"
                     :disabled="options.length === 1"
-                    class="p-2.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors focus:outline-none disabled:opacity-30 disabled:hover:bg-transparent disabled:cursor-not-allowed border border-transparent hover:border-rose-200"
+                    class="p-2.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all focus:outline-none disabled:opacity-30 disabled:hover:bg-transparent disabled:cursor-not-allowed border border-transparent hover:border-rose-100 hover:shadow-sm"
                     title="Eliminar candidato"
                   >
-                    <Trash2 class="w-5 h-5" />
+                    <Trash2 class="w-5 h-5 pointer-events-none" />
                   </button>
                 </div>
               </div>

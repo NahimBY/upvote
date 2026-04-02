@@ -18,6 +18,7 @@ import { findOrCreateUserFromToken } from '../users/user.service';
 import { ElectionModel } from './election.model';
 import { VoteModel } from '../votes/vote.model';
 import { UserModel } from '../users/user.model';
+import { getIO } from '../../core/socket';
 
 const optionSchema = z.object({
   label: z.string().min(1),
@@ -110,6 +111,9 @@ export const createElectionHandler = asyncHandler(async (req: Request, res: Resp
   });
 
   res.status(201).json(new ApiResponse('Election created', election));
+
+  const io = getIO();
+  if (io) io.to('admin_elections').emit('elections_updated');
 });
 
 export const getAllElectionsHandler = asyncHandler(async (_req: Request, res: Response) => {
@@ -132,11 +136,17 @@ export const updateElectionHandler = asyncHandler(async (req: Request, res: Resp
 
   const election = await updateElection(req.params.id as string, updateData as any);
   res.json(new ApiResponse('Election updated', election));
+
+  const io = getIO();
+  if (io) io.to('admin_elections').emit('elections_updated', election);
 });
 
 export const deleteElectionHandler = asyncHandler(async (req: Request, res: Response) => {
   await deleteElection(req.params.id as string);
   res.json(new ApiResponse('Election deleted'));
+
+  const io = getIO();
+  if (io) io.to('admin_elections').emit('elections_updated');
 });
 
 export const changeStatusHandler = asyncHandler(async (req: Request, res: Response) => {
@@ -146,6 +156,9 @@ export const changeStatusHandler = asyncHandler(async (req: Request, res: Respon
 
   const election = await changeElectionStatus(req.params.id as string, status);
   res.json(new ApiResponse('Election status updated', election));
+
+  const io = getIO();
+  if (io) io.to('admin_elections').emit('elections_updated', election);
 });
 
 // --- Public handler ---

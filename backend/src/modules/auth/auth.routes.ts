@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { checkJwt } from '../../config/keycloak';
 import { attachAuthUser } from '../../middlewares/auth.middleware';
 import { requireRole } from '../../middlewares/role.middleware';
+import { authLimiter } from '../../middlewares/rateLimiter.middleware';
 import {
   loginHandler,
   registerHandler,
@@ -17,12 +18,12 @@ import {
 const router = Router();
 
 // Public - no auth required
-router.post('/auth/login', loginHandler);
-router.post('/auth/register', registerHandler);
+router.post('/auth/login', authLimiter, loginHandler);
+router.post('/auth/register', authLimiter, registerHandler);
 router.post('/auth/refresh', refreshTokenHandler);
 router.post('/auth/logout', logoutHandler);
-router.post('/auth/forgot-password', forgotPasswordHandler);
-router.post('/auth/reset-password', resetPasswordHandler);
+router.post('/auth/forgot-password', authLimiter, forgotPasswordHandler);
+router.post('/auth/reset-password', authLimiter, resetPasswordHandler);
 
 // Protected
 router.get('/auth/check', checkJwt, attachAuthUser, checkSessionHandler);

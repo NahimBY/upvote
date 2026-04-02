@@ -53,7 +53,8 @@ onMounted(() => {
 
 const handleLogout = () => {
   localStorage.removeItem('accessToken')
-  router.push('/login')
+  localStorage.removeItem('refreshToken')
+  router.push('/')
 }
 </script>
 

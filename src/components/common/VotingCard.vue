@@ -47,6 +47,13 @@ const getStatusClasses = (status: string) => {
     <div>
       <div class="flex justify-between items-start mb-4">
         <h3
+          v-if="status === 'closed'"
+          class="text-lg font-semibold text-white cursor-not-allowed transition-colors line-clamp-2 pr-4"
+        >
+          {{ title }}
+        </h3>
+        <h3
+          v-else
           @click="router.push(`/election/${id}`)"
           class="text-lg font-semibold text-white cursor-pointer group-hover:text-emerald-400 transition-colors line-clamp-2 pr-4"
         >

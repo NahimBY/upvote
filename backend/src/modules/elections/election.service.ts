@@ -91,7 +91,7 @@ export async function changeElectionStatus(id: string, newStatus: ElectionStatus
 }
 
 export async function getEligibleElections(user: { location: IUser['location']; eligibilityTags: string[] }) {
-  const elections = await ElectionModel.find({ status: { $in: ['published', 'open'] } }).sort({ createdAt: -1 });
+  const elections = await ElectionModel.find({ status: { $in: ['published', 'open', 'closed'] } }).sort({ createdAt: -1 });
   return elections.filter((e) => isUserEligible(e.toObject() as IElection, user));
 }
 

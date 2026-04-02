@@ -66,6 +66,10 @@ const electionSchema = new Schema<IElection>(
     maxVotes: {
       type: Number,
       default: null
+    },
+    currentVotes: {
+      type: Number,
+      default: 0
     }
   },
   {

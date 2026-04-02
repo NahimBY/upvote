@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { io, Socket } from 'socket.io-client'
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import OrganizatorLayout from '../../layouts/OrganizatorLayout.vue'
 import { apiFetch } from '../../utils/apiFetch'
@@ -10,7 +11,6 @@ import {
   BarChart2,
   Trash2,
   Building2,
-  RefreshCw,
   MoreVertical,
   CheckCircle2,
   PlayCircle,
@@ -139,17 +139,8 @@ const closeDropdowns = (e: Event) => {
   }
 }
 
-onMounted(() => {
-  document.addEventListener('click', closeDropdowns)
-  fetchElections()
-})
-
-onUnmounted(() => {
-  document.removeEventListener('click', closeDropdowns)
-})
-
 const updateStatus = async (id: string, newStatus: string) => {
-  openDropdownId.value = null // Cierra el menú al accionar
+  openDropdownId.value = null
   const room = rooms.value.find((r) => r._id === id)
   if (!room) return
 
@@ -174,21 +165,26 @@ const updateStatus = async (id: string, newStatus: string) => {
   }
 }
 
-const refreshElections = async () => {
-  await fetchElections()
-}
-
-let pollInterval: number | null = null
+let socket: Socket | null = null
 
 onMounted(() => {
-  pollInterval = window.setInterval(() => {
+  document.addEventListener('click', closeDropdowns)
+  fetchElections()
+
+  socket = io()
+  socket.on('connect', () => {
+    socket?.emit('join_admin_room')
+  })
+
+  socket.on('elections_updated', () => {
     fetchElections()
-  }, 10000)
+  })
 })
 
 onUnmounted(() => {
-  if (pollInterval) {
-    clearInterval(pollInterval)
+  document.removeEventListener('click', closeDropdowns)
+  if (socket) {
+    socket.disconnect()
   }
 })
 </script>
@@ -204,22 +200,13 @@ onUnmounted(() => {
             Gestiona, edita y supervisa las salas de votación de tu organización.
           </p>
         </div>
-        <div class="flex gap-2">
-          <button
-            @click="refreshElections"
-            class="inline-flex items-center px-4 py-2.5 bg-emerald-600 text-white rounded-xl text-sm font-medium hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 transition-colors shadow-sm w-full sm:w-auto justify-center"
-          >
-            <RefreshCw class="w-5 h-5 mr-2 -ml-1" />
-            Actualizar
-          </button>
-          <RouterLink
-            to="/organizator/rooms/create"
-            class="inline-flex items-center px-4 py-2.5 bg-emerald-600 text-white rounded-xl text-sm font-medium hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 transition-colors shadow-sm w-full sm:w-auto justify-center"
-          >
-            <Plus class="w-5 h-5 mr-2 -ml-1" />
-            Crear Nueva Sala
-          </RouterLink>
-        </div>
+        <RouterLink
+          to="/organizator/rooms/create"
+          class="inline-flex items-center px-4 py-2.5 bg-emerald-600 text-white rounded-xl text-sm font-medium hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 transition-colors shadow-sm w-full sm:w-auto justify-center"
+        >
+          <Plus class="w-5 h-5 mr-2 -ml-1" />
+          Crear Nueva Sala
+        </RouterLink>
       </div>
 
       <!-- Filters & Actions Bar -->

@@ -29,6 +29,7 @@ export interface IElection {
   allowResultsBeforeClose: boolean;
   maxSelections?: number;
   maxVotes?: number;
+  currentVotes?: number;
   createdAt?: Date;
   updatedAt?: Date;
 }

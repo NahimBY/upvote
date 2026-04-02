@@ -51,6 +51,44 @@ export async function createVote(data: {
     throw new ApiError(403, 'Not eligible for this election');
   }
 
+  // Pre-check para no gastar cupos si el usuario ya votó
+  const alreadyVoted = await VoteModel.exists({ electionId: data.electionId, voterKeycloakId: data.voterKeycloakId });
+  if (alreadyVoted) {
+    throw new ApiError(409, 'You have already voted in this election');
+  }
+
+  let reserved = false;
+  // Si la sala de elecciones tiene un límite estricto de votos
+  if (election.maxVotes) {
+    // Intentar reservar un asiento ATÓMICAMENTE en MongoDB
+    const updatedElection = await ElectionModel.findOneAndUpdate(
+      { 
+        _id: election._id, 
+        status: 'open',
+        $or: [
+          { currentVotes: { $exists: false } },
+          { currentVotes: { $lt: election.maxVotes } } // Estricta condición de límite
+        ]
+      },
+      { $inc: { currentVotes: 1 } },
+      { new: true }
+    );
+
+    if (!updatedElection) {
+      // Falló al reservar cupo (estado cerrado o límite alcanzado)
+      const currentStats = await ElectionModel.findById(election._id);
+      if (currentStats && currentStats.maxVotes && currentStats.currentVotes && currentStats.currentVotes >= currentStats.maxVotes) {
+        if (currentStats.status === 'open') {
+          currentStats.status = 'closed';
+          await currentStats.save();
+        }
+        throw new ApiError(400, 'Election has reached maximum allowed votes');
+      }
+      throw new ApiError(400, 'Election is not open for voting or reached data constraints');
+    }
+    reserved = true;
+  }
+
   let vote;
   try {
     vote = await VoteModel.create({
@@ -65,6 +103,10 @@ export async function createVote(data: {
       }
     });
   } catch (err: any) {
+    // Si la inserción del voto falla rotunda y misteriosamente, debemos liberar el cupo atómico que robamos
+    if (reserved) {
+      await ElectionModel.findByIdAndUpdate(election._id, { $inc: { currentVotes: -1 } });
+    }
     if (err.code === 11000) {
       throw new ApiError(409, 'You have already voted in this election');
     }

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { io, Socket } from 'socket.io-client'
 import { ref, onMounted, computed, onUnmounted } from 'vue'
 import {
   UserCircle,
@@ -40,7 +41,6 @@ const fetchElections = async () => {
     const response = await apiFetch('/api/elections')
     if (response.ok) {
       const result = await response.json()
-      console.log(result)
       activeVotes.value = result.data.map((election: any) => {
         const startDate = new Date(election.startDate)
         const formattedStartDate = startDate.toLocaleDateString('es-ES', {
@@ -105,7 +105,7 @@ const showFilterMenu = ref(false)
 const activeFilter = ref<'all' | 'open' | 'published' | 'closed'>('all')
 
 const filteredActiveVotes = computed(() => {
-  let result = activeVotes.value
+  let result = [...activeVotes.value]
 
   if (activeFilter.value !== 'all') {
     result = result.filter(v => v.status === activeFilter.value)
@@ -114,6 +114,19 @@ const filteredActiveVotes = computed(() => {
   if (searchQuery.value) {
     result = result.filter(v => v.title.toLowerCase().includes(searchQuery.value.toLowerCase()))
   }
+
+  // Define priority: published (1) -> open (2) -> closed (3)
+  const statusOrder: Record<string, number> = {
+    'published': 1,
+    'open': 2,
+    'closed': 3
+  }
+
+  result.sort((a, b) => {
+    const orderA = statusOrder[a.status] || 99
+    const orderB = statusOrder[b.status] || 99
+    return orderA - orderB
+  })
 
   return result
 })
@@ -129,8 +142,7 @@ const handleLogout = () => {
 
 const userName = ref('Usuario')
 
-
-let pollInterval: number | null = null
+let socket: Socket | null = null
 
 onMounted(() => {
   const token = localStorage.getItem('accessToken')
@@ -159,15 +171,20 @@ onMounted(() => {
   fetchElections()
   fetchMyVotes()
 
-  pollInterval = window.setInterval(() => {
+  socket = io()
+  socket.on('connect', () => {
+    socket?.emit('join_admin_room')
+  })
+
+  socket.on('elections_updated', () => {
     fetchElections()
     fetchMyVotes()
-  }, 10000)
+  })
 })
 
 onUnmounted(() => {
-  if (pollInterval) {
-    clearInterval(pollInterval)
+  if (socket) {
+    socket.disconnect()
   }
 })
 </script>

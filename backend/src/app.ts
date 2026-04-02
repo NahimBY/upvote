@@ -1,12 +1,18 @@
 import cors from 'cors';
 import express from 'express';
+import helmet from 'helmet';
 import morgan from 'morgan';
 import { env } from './config/env';
 import routes from './routes';
 import { errorMiddleware } from './middlewares/error.middleware';
 import { notFoundMiddleware } from './middlewares/notFound.middleware';
+import { globalLimiter } from './middlewares/rateLimiter.middleware';
 
 const app = express();
+
+app.set('trust proxy', 1);
+
+app.use(helmet());
 
 app.use(
   cors({
@@ -18,6 +24,8 @@ app.use(
 app.use(morgan('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+app.use('/api', globalLimiter);
 
 app.use(routes);
 
