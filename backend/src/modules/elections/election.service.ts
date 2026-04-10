@@ -1,5 +1,6 @@
 import crypto from 'crypto';
 import { ElectionModel } from './election.model';
+import { VoteModel } from '../votes/vote.model';
 import { IElection, ElectionStatus } from './election.types';
 import { ApiError } from '../../core/utils/apiError';
 import { IUser } from '../users/user.types';
@@ -50,8 +51,9 @@ export async function getElectionById(id: string) {
   return ElectionModel.findById(id);
 }
 
-export async function getAllElections() {
-  return ElectionModel.find().sort({ createdAt: -1 });
+export async function getAllElections(organizatorId?: string) {
+  const query = organizatorId ? { createdByKeycloakId: organizatorId } : {};
+  return ElectionModel.find(query).sort({ createdAt: -1 });
 }
 
 export async function updateElection(id: string, data: Partial<IElection>) {
@@ -136,3 +138,142 @@ export async function closeElectionIfMaxVotesReached(electionId: string): Promis
 }
 
 export { isUserEligible };
+
+// --- Organizator statistics ---
+
+export async function getOrganizatorStatsOverview(organizatorId: string) {
+  const elections = await ElectionModel.find({ createdByKeycloakId: organizatorId }).lean();
+  const electionIds = elections.map((e) => e._id.toString());
+
+  const byStatus: Record<ElectionStatus, number> = {
+    draft: 0,
+    published: 0,
+    open: 0,
+    closed: 0,
+    archived: 0
+  };
+  for (const e of elections) {
+    byStatus[e.status as ElectionStatus] = (byStatus[e.status as ElectionStatus] || 0) + 1;
+  }
+
+  const totalVotes = electionIds.length
+    ? await VoteModel.countDocuments({ electionId: { $in: electionIds } })
+    : 0;
+
+  const finishedElections = elections.filter((e) => ['open', 'closed', 'archived'].includes(e.status));
+  let averageParticipation = 0;
+  if (finishedElections.length) {
+    const perElection = await Promise.all(
+      finishedElections.map(async (e) => {
+        if (!e.maxVotes) return null;
+        const count = await VoteModel.countDocuments({ electionId: e._id.toString() });
+        return Math.min(100, (count / e.maxVotes) * 100);
+      })
+    );
+    const valid = perElection.filter((n): n is number => n !== null);
+    if (valid.length) averageParticipation = valid.reduce((a, b) => a + b, 0) / valid.length;
+  }
+
+  return {
+    totalElections: elections.length,
+    totalVotes,
+    activeElections: byStatus.open + byStatus.published,
+    draftElections: byStatus.draft,
+    closedElections: byStatus.closed,
+    archivedElections: byStatus.archived,
+    averageParticipation: Math.round(averageParticipation * 10) / 10,
+    byStatus
+  };
+}
+
+export async function getOrganizatorVotesTimeline(organizatorId: string, days: number) {
+  const elections = await ElectionModel.find({ createdByKeycloakId: organizatorId }, { _id: 1 }).lean();
+  const electionIds = elections.map((e) => e._id.toString());
+
+  const since = new Date();
+  since.setHours(0, 0, 0, 0);
+  since.setDate(since.getDate() - (days - 1));
+
+  const buckets: { date: string; count: number }[] = [];
+  for (let i = 0; i < days; i++) {
+    const d = new Date(since);
+    d.setDate(since.getDate() + i);
+    buckets.push({ date: d.toISOString().slice(0, 10), count: 0 });
+  }
+
+  if (!electionIds.length) return buckets;
+
+  const votes = await VoteModel.find(
+    { electionId: { $in: electionIds }, submittedAt: { $gte: since } },
+    { submittedAt: 1 }
+  ).lean();
+
+  const idx = new Map(buckets.map((b, i) => [b.date, i]));
+  for (const v of votes) {
+    const key = new Date(v.submittedAt).toISOString().slice(0, 10);
+    const i = idx.get(key);
+    if (i !== undefined) buckets[i]!.count += 1;
+  }
+  return buckets;
+}
+
+export async function getOrganizatorUpcomingElections(organizatorId: string) {
+  return ElectionModel.find({
+    createdByKeycloakId: organizatorId,
+    status: { $in: ['draft', 'published'] },
+    startDate: { $gte: new Date() }
+  })
+    .sort({ startDate: 1 })
+    .limit(10)
+    .lean();
+}
+
+export async function getElectionParticipation(electionId: string, organizatorId: string) {
+  const election = await ElectionModel.findById(electionId).lean();
+  if (!election) throw new ApiError(404, 'Election not found');
+  if (election.createdByKeycloakId !== organizatorId) throw new ApiError(403, 'Forbidden');
+
+  const totalVotes = await VoteModel.countDocuments({ electionId });
+  const totalVoters = election.maxVotes ?? 0;
+  const participation = totalVoters > 0 ? Math.round((totalVotes / totalVoters) * 1000) / 10 : 0;
+
+  return {
+    electionId,
+    totalVotes,
+    totalVoters,
+    participation,
+    status: election.status,
+    startDate: election.startDate,
+    endDate: election.endDate
+  };
+}
+
+export async function getElectionDistribution(electionId: string, organizatorId: string) {
+  const election = await ElectionModel.findById(electionId).lean();
+  if (!election) throw new ApiError(404, 'Election not found');
+  if (election.createdByKeycloakId !== organizatorId) throw new ApiError(403, 'Forbidden');
+
+  const votes = await VoteModel.find({ electionId }, { selectedOptionIds: 1 }).lean();
+  const counts: Record<string, number> = {};
+  for (const opt of election.options) counts[opt.id] = 0;
+  for (const v of votes) {
+    for (const id of v.selectedOptionIds) {
+      if (counts[id] !== undefined) counts[id] += 1;
+    }
+  }
+  const totalSelections = Object.values(counts).reduce((a, b) => a + b, 0);
+
+  return {
+    electionId,
+    totalVotes: votes.length,
+    options: election.options.map((opt) => ({
+      id: opt.id,
+      label: opt.label,
+      votes: counts[opt.id] || 0,
+      percentage:
+        totalSelections > 0
+          ? Math.round(((counts[opt.id] || 0) / totalSelections) * 1000) / 10
+          : 0
+    }))
+  };
+}

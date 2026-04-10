@@ -7,11 +7,12 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   Activity,
+  PieChart,
+  TrendingUp,
 } from 'lucide-vue-next'
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { apiFetch } from '../../utils/apiFetch'
 
-// Reactive data state
 const stats = ref([
   {
     name: 'Total de Votos (Mis Salas)',
@@ -21,9 +22,27 @@ const stats = ref([
     icon: CheckCircle2,
   },
   { name: 'Mis Salas Activas', value: '...', change: '', changeType: 'neutral', icon: Building2 },
+  { name: 'Total de Salas', value: '...', change: '', changeType: 'neutral', icon: PieChart },
+  {
+    name: 'Participación Promedio',
+    value: '...',
+    change: '',
+    changeType: 'neutral',
+    icon: TrendingUp,
+  },
 ])
 
 const recentActivity = ref<any[]>([])
+const timeline = ref<{ date: string; count: number }[]>([])
+
+const maxTimelineCount = computed(() =>
+  Math.max(1, ...timeline.value.map((b) => b.count)),
+)
+
+const formatDayLabel = (iso: string) => {
+  const d = new Date(iso + 'T00:00:00')
+  return d.toLocaleDateString('es-MX', { weekday: 'short', day: 'numeric' })
+}
 
 const fetchDashboardStats = async () => {
   try {
@@ -31,21 +50,18 @@ const fetchDashboardStats = async () => {
     if (response.ok) {
       const result = await response.json()
       const computedStats = result?.data?.stats
-
       if (computedStats) {
         if (stats.value[0]) {
           stats.value[0].value = computedStats.totalVotes?.toString() ?? '0'
           stats.value[0].change = 'Sistema en vivo'
           stats.value[0].changeType = 'positive'
         }
-
         if (stats.value[1]) {
           stats.value[1].value = computedStats.activeRooms?.toString() ?? '0'
           stats.value[1].change = 'Métricas online'
           stats.value[1].changeType = 'positive'
         }
       }
-
       recentActivity.value = result?.data?.recentActivity ?? []
     }
   } catch (error) {
@@ -53,8 +69,43 @@ const fetchDashboardStats = async () => {
   }
 }
 
+const fetchOverview = async () => {
+  try {
+    const response = await apiFetch('/api/organizator/stats/overview')
+    if (!response.ok) return
+    const result = await response.json()
+    const data = result?.data
+    if (!data) return
+    if (stats.value[2]) {
+      stats.value[2].value = (data.totalElections ?? 0).toString()
+      stats.value[2].change = `${data.draftElections ?? 0} en borrador`
+      stats.value[2].changeType = 'positive'
+    }
+    if (stats.value[3]) {
+      stats.value[3].value = `${data.averageParticipation ?? 0}%`
+      stats.value[3].change = `${data.closedElections ?? 0} cerradas`
+      stats.value[3].changeType = (data.averageParticipation ?? 0) >= 50 ? 'positive' : 'negative'
+    }
+  } catch (error) {
+    console.error('Error fetching stats overview:', error)
+  }
+}
+
+const fetchTimeline = async () => {
+  try {
+    const response = await apiFetch('/api/organizator/stats/votes-timeline?days=7')
+    if (!response.ok) return
+    const result = await response.json()
+    timeline.value = result?.data?.timeline ?? []
+  } catch (error) {
+    console.error('Error fetching votes timeline:', error)
+  }
+}
+
 onMounted(() => {
   fetchDashboardStats()
+  fetchOverview()
+  fetchTimeline()
 })
 </script>
 
@@ -80,7 +131,7 @@ onMounted(() => {
       </div>
 
       <!-- Stats Grid -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <div
           v-for="stat in stats"
           :key="stat.name"
@@ -117,19 +168,30 @@ onMounted(() => {
           class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 lg:col-span-2 flex flex-col"
         >
           <h3 class="text-lg font-semibold text-slate-900 border-b border-slate-100 pb-4 mb-4">
-            Tendencia de Votos
+            Tendencia de Votos (últimos 7 días)
           </h3>
-          <div class="flex-1 flex flex-col items-center justify-center text-center py-12">
-            <div
-              class="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4 border border-slate-100"
-            >
+          <div v-if="timeline.length === 0" class="flex-1 flex flex-col items-center justify-center text-center py-12">
+            <div class="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4 border border-slate-100">
               <Activity class="w-8 h-8 text-slate-300" />
             </div>
-            <p class="text-slate-600 font-medium">Gráfico de actividad en desarrollo</p>
+            <p class="text-slate-600 font-medium">Sin datos aún</p>
             <p class="text-sm text-slate-400 mt-1 max-w-sm">
-              Conecta la plataforma a tu proveedor de métricas o base de datos temporal para poblar
-              el gráfico.
+              Cuando lleguen votos en tus salas, aparecerá aquí su tendencia diaria.
             </p>
+          </div>
+          <div v-else class="flex-1 flex items-end gap-3 px-2 pt-4 pb-2 min-h-[220px]">
+            <div
+              v-for="bucket in timeline"
+              :key="bucket.date"
+              class="flex-1 flex flex-col items-center justify-end gap-2"
+            >
+              <span class="text-xs font-semibold text-slate-700">{{ bucket.count }}</span>
+              <div
+                class="w-full bg-emerald-500 rounded-t-md transition-all"
+                :style="{ height: `${(bucket.count / maxTimelineCount) * 160 + 4}px` }"
+              ></div>
+              <span class="text-[10px] text-slate-500 capitalize">{{ formatDayLabel(bucket.date) }}</span>
+            </div>
           </div>
         </div>
 

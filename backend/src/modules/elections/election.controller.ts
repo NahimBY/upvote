@@ -12,7 +12,12 @@ import {
   deleteElection,
   changeElectionStatus,
   getEligibleElections,
-  getElectionDetailForVoter
+  getElectionDetailForVoter,
+  getOrganizatorStatsOverview,
+  getOrganizatorVotesTimeline,
+  getOrganizatorUpcomingElections,
+  getElectionParticipation,
+  getElectionDistribution
 } from './election.service';
 import { findOrCreateUserFromToken } from '../users/user.service';
 import { ElectionModel } from './election.model';
@@ -116,8 +121,9 @@ export const createElectionHandler = asyncHandler(async (req: Request, res: Resp
   if (io) io.to('admin_elections').emit('elections_updated');
 });
 
-export const getAllElectionsHandler = asyncHandler(async (_req: Request, res: Response) => {
-  const elections = await getAllElections();
+export const getAllElectionsHandler = asyncHandler(async (req: Request, res: Response) => {
+  if (!req.authUser?.sub) throw new ApiError(401, 'Unauthorized');
+  const elections = await getAllElections(req.authUser.sub);
   res.json(new ApiResponse('All elections retrieved', elections));
 });
 
@@ -254,4 +260,37 @@ export const getDashboardStatsHandler = asyncHandler(async (req: Request, res: R
     },
     recentActivity: allActivity
   }));
+});
+
+// --- Organizator stats handlers ---
+
+export const getStatsOverviewHandler = asyncHandler(async (req: Request, res: Response) => {
+  if (!req.authUser?.sub) throw new ApiError(401, 'Unauthorized');
+  const overview = await getOrganizatorStatsOverview(req.authUser.sub);
+  res.json(new ApiResponse('Stats overview retrieved', overview));
+});
+
+export const getVotesTimelineHandler = asyncHandler(async (req: Request, res: Response) => {
+  if (!req.authUser?.sub) throw new ApiError(401, 'Unauthorized');
+  const days = Math.min(90, Math.max(1, parseInt((req.query.days as string) || '7', 10) || 7));
+  const timeline = await getOrganizatorVotesTimeline(req.authUser.sub, days);
+  res.json(new ApiResponse('Votes timeline retrieved', { days, timeline }));
+});
+
+export const getUpcomingElectionsHandler = asyncHandler(async (req: Request, res: Response) => {
+  if (!req.authUser?.sub) throw new ApiError(401, 'Unauthorized');
+  const upcoming = await getOrganizatorUpcomingElections(req.authUser.sub);
+  res.json(new ApiResponse('Upcoming elections retrieved', upcoming));
+});
+
+export const getElectionParticipationHandler = asyncHandler(async (req: Request, res: Response) => {
+  if (!req.authUser?.sub) throw new ApiError(401, 'Unauthorized');
+  const data = await getElectionParticipation(req.params.id as string, req.authUser.sub);
+  res.json(new ApiResponse('Participation retrieved', data));
+});
+
+export const getElectionDistributionHandler = asyncHandler(async (req: Request, res: Response) => {
+  if (!req.authUser?.sub) throw new ApiError(401, 'Unauthorized');
+  const data = await getElectionDistribution(req.params.id as string, req.authUser.sub);
+  res.json(new ApiResponse('Distribution retrieved', data));
 });

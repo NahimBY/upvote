@@ -8,6 +8,7 @@ import OrganizatorDashboardView from '../views/organizator/DashboardView.vue'
 import ManageRoomsView from '../views/organizator/ManageRoomsView.vue'
 import CreateRoomView from '../views/organizator/CreateRoomView.vue'
 import EditRoomView from '../views/organizator/EditRoomView.vue'
+import StatisticsView from '../views/organizator/StatisticsView.vue'
 
 import DashboardView from '../views/voter/DashboardView.vue'
 import VotingRoomView from '../views/voter/VotingRoomView.vue'
@@ -59,6 +60,12 @@ const router = createRouter({
       path: '/organizator/rooms/edit/:id',
       name: 'organizator-edit-room',
       component: EditRoomView,
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/organizator/statistics',
+      name: 'organizator-statistics',
+      component: StatisticsView,
       meta: { requiresAuth: true }
     },
     {

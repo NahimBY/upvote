@@ -18,6 +18,7 @@ import {
   Archive,
 } from 'lucide-vue-next'
 import DeleteRoomCard from '../../components/organizator/rooms/DeleteRoomCard.vue'
+import RoomResultsModal from '../../components/organizator/rooms/RoomResultsModal.vue'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
@@ -28,6 +29,7 @@ interface Election {
   status: string
   participation?: number
   totalVoters?: number
+  totalVotes?: number
   [key: string]: any
 }
 
@@ -40,13 +42,43 @@ const fetchElections = async () => {
     })
     const parsed = await response.json()
     rooms.value = parsed.data || []
+    void fetchParticipations()
   } catch (error) {
     console.error('Error fetching elections:', error)
   }
 }
 
+const fetchParticipations = async () => {
+  await Promise.all(
+    rooms.value.map(async (room) => {
+      try {
+        const res = await apiFetch(`/api/organizator/elections/${room._id}/participation`)
+        if (!res.ok) return
+        const parsed = await res.json()
+        const data = parsed?.data
+        if (!data) return
+        room.participation = data.participation ?? 0
+        room.totalVoters = data.totalVoters ?? 0
+        room.totalVotes = data.totalVotes ?? 0
+      } catch (error) {
+        console.error('Error fetching participation:', error)
+      }
+    }),
+  )
+}
+
 const showDeleteModal = ref(false)
 const roomToDelete = ref('')
+
+const showResultsModal = ref(false)
+const resultsRoomId = ref('')
+const resultsRoomTitle = ref('')
+
+const openResults = (room: Election) => {
+  resultsRoomId.value = room._id
+  resultsRoomTitle.value = room.title
+  showResultsModal.value = true
+}
 
 const promptDelete = (id: string) => {
   roomToDelete.value = id
@@ -323,23 +355,30 @@ onUnmounted(() => {
 
                 <!-- Participacion Bar -->
                 <td class="px-6 py-4 whitespace-nowrap">
-                  <div class="flex items-center">
-                    <span class="text-sm text-slate-900 font-bold w-10"
-                      >{{ room.participation || 0 }}%</span
-                    >
-                    <div
-                      class="w-24 sm:w-32 bg-slate-100 rounded-full h-2.5 ml-2 overflow-hidden border border-slate-200"
-                    >
+                  <template v-if="(room.totalVoters || 0) > 0">
+                    <div class="flex items-center">
+                      <span class="text-sm text-slate-900 font-bold w-10"
+                        >{{ room.participation || 0 }}%</span
+                      >
                       <div
-                        class="bg-emerald-500 h-full rounded-full"
-                        :style="{ width: `${room.participation || 0}%` }"
-                      ></div>
+                        class="w-24 sm:w-32 bg-slate-100 rounded-full h-2.5 ml-2 overflow-hidden border border-slate-200"
+                      >
+                        <div
+                          class="bg-emerald-500 h-full rounded-full"
+                          :style="{ width: `${room.participation || 0}%` }"
+                        ></div>
+                      </div>
                     </div>
-                  </div>
-                  <div class="text-xs text-slate-500 mt-1.5 font-medium ml-12">
-                    {{ Math.floor(((room.participation || 0) * (room.totalVoters || 0)) / 100) }} de
-                    {{ room.totalVoters || 0 }} votos
-                  </div>
+                    <div class="text-xs text-slate-500 mt-1.5 font-medium ml-12">
+                      {{ room.totalVotes || 0 }} de {{ room.totalVoters }} votos
+                    </div>
+                  </template>
+                  <template v-else>
+                    <div class="text-sm text-slate-900 font-bold">
+                      {{ room.totalVotes || 0 }}
+                      <span class="text-xs text-slate-500 font-medium ml-1">votos</span>
+                    </div>
+                  </template>
                 </td>
 
                 <!-- Acciones -->
@@ -348,6 +387,7 @@ onUnmounted(() => {
                     <button
                       class="p-2 text-slate-400 hover:text-emerald-600 hover:bg-slate-100 rounded-lg transition-colors"
                       title="Resultados y Estadísticas"
+                      @click="openResults(room)"
                     >
                       <BarChart2 class="w-5 h-5" />
                     </button>
@@ -494,6 +534,14 @@ onUnmounted(() => {
       :id="roomToDelete"
       @roomDeleted="handleRoomDeleted"
       @cancel="showDeleteModal = false"
+    />
+
+    <!-- Resultados / Distribución de Votos -->
+    <RoomResultsModal
+      :isOpen="showResultsModal"
+      :electionId="resultsRoomId"
+      :electionTitle="resultsRoomTitle"
+      @close="showResultsModal = false"
     />
   </OrganizatorLayout>
 </template>
