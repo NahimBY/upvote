@@ -10,6 +10,9 @@ import CreateRoomView from '../views/organizator/CreateRoomView.vue'
 import EditRoomView from '../views/organizator/EditRoomView.vue'
 import StatisticsView from '../views/organizator/StatisticsView.vue'
 
+import AdminDashboardView from '../views/admin/DashboardView.vue'
+import AdminUsersView from '../views/admin/UsersView.vue'
+
 import DashboardView from '../views/voter/DashboardView.vue'
 import VotingRoomView from '../views/voter/VotingRoomView.vue'
 import LandingView from '../views/LandingView.vue'
@@ -69,6 +72,18 @@ const router = createRouter({
       meta: { requiresAuth: true }
     },
     {
+      path: '/admin',
+      name: 'admin-dashboard',
+      component: AdminDashboardView,
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/admin/users',
+      name: 'admin-users',
+      component: AdminUsersView,
+      meta: { requiresAuth: true }
+    },
+    {
       path: '/election/:id',
       name: 'election',
       component: VotingRoomView,
@@ -117,17 +132,23 @@ router.beforeEach((to, from, next) => {
   if (to.meta.requiresAuth && !isAuthenticated) {
     next({ name: 'login' })
   } else if (isAuthenticated && (to.name === 'login' || to.name === 'register')) {
-    if (userRole === 'organizator') {
+    if (userRole === 'admin') {
+      next({ path: '/admin' })
+    } else if (userRole === 'organizator') {
       next({ path: '/organizator' })
     } else {
       next({ path: '/dashboard' })
     }
   } else {
-    // Prevent voters from accessing organizator routes and vice-versa
-    if (to.path.startsWith('/organizator') && userRole !== 'organizator' && isAuthenticated) {
-      next({ path: '/dashboard' })
+    // Role-based route protection
+    if (to.path.startsWith('/admin') && userRole !== 'admin' && isAuthenticated) {
+      next({ path: userRole === 'organizator' ? '/organizator' : '/dashboard' })
+    } else if (to.path.startsWith('/organizator') && userRole !== 'organizator' && isAuthenticated) {
+      next({ path: userRole === 'admin' ? '/admin' : '/dashboard' })
     } else if (to.path.startsWith('/dashboard') && userRole === 'organizator' && isAuthenticated) {
       next({ path: '/organizator' })
+    } else if (to.path.startsWith('/dashboard') && userRole === 'admin' && isAuthenticated) {
+      next({ path: '/admin' })
     } else {
       next()
     }
