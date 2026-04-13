@@ -17,7 +17,7 @@ import {
   watch,
   watchEffect
 } from "./chunk-C6I6ZPET.js";
-import "./chunk-G3PMV62Z.js";
+import "./chunk-PR4QN5HX.js";
 
 // node_modules/vue-router/dist/useApi-C8XBqGtv.js
 var isBrowser = typeof document !== "undefined";
