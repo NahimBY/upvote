@@ -193,7 +193,7 @@ const formattedDateRange = computed(() => {
 <template>
   <div class="min-h-screen bg-slate-900 selection:bg-emerald-500/30 font-sans flex flex-col">
     <!-- Navbar (consistent view) -->
-    <nav class="bg-slate-800 border-b border-slate-700/50 sticky top-0 z-10 shadow-sm">
+    <nav class="bg-slate-800 border-b border-slate-700/50 sticky top-0 z-100 shadow-sm">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16">
           <div class="flex items-center cursor-pointer" @click="router.push('/dashboard')">

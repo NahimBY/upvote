@@ -21,7 +21,7 @@ const handleRegister = () => {
     <div class="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-600/20 rounded-full blur-[120px] pointer-events-none"></div>
 
     <!-- Navbar -->
-    <nav class="relative z-10 border-b border-slate-800/50 bg-slate-950/50 backdrop-blur-lg sticky top-0">
+    <nav class="fixed w-full z-[100] border-b border-slate-800/50 bg-slate-950/50 backdrop-blur-lg top-0">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between items-center h-20">
           <div class="flex items-center cursor-pointer group" @click="router.push('/')">

@@ -1,37 +1,37 @@
 {
-  "hash": "2f0184cd",
-  "configHash": "6931fae9",
-  "lockfileHash": "88a7f348",
-  "browserHash": "e35478aa",
+  "hash": "e8be5721",
+  "configHash": "911992f8",
+  "lockfileHash": "6348dc53",
+  "browserHash": "10c87a41",
   "optimized": {
     "exceljs": {
       "src": "../../node_modules/exceljs/dist/exceljs.min.js",
       "file": "exceljs.js",
-      "fileHash": "e3bf2e90",
+      "fileHash": "15673961",
       "needsInterop": true
     },
     "lucide-vue-next": {
       "src": "../../node_modules/lucide-vue-next/dist/esm/lucide-vue-next.js",
       "file": "lucide-vue-next.js",
-      "fileHash": "3fb4e094",
+      "fileHash": "da241644",
       "needsInterop": false
     },
     "socket.io-client": {
       "src": "../../node_modules/socket.io-client/build/esm/index.js",
       "file": "socket__io-client.js",
-      "fileHash": "0390d488",
+      "fileHash": "9cfa0b42",
       "needsInterop": false
     },
     "vue": {
       "src": "../../node_modules/vue/dist/vue.runtime.esm-bundler.js",
       "file": "vue.js",
-      "fileHash": "552d8cbb",
+      "fileHash": "0844fa7a",
       "needsInterop": false
     },
     "vue-router": {
       "src": "../../node_modules/vue-router/dist/vue-router.js",
       "file": "vue-router.js",
-      "fileHash": "3e2f242f",
+      "fileHash": "2a7c306f",
       "needsInterop": false
     }
   },
