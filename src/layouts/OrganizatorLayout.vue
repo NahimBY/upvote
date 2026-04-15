@@ -21,7 +21,7 @@ const navigation = [
   { name: 'Dashboard', href: '/organizator', icon: LayoutDashboard },
   { name: 'Salas de Votación', href: '/organizator/rooms', icon: Building2 },
   { name: 'Estadísticas', href: '/organizator/statistics', icon: ChartBar },
-  { name: 'Configuración', href: '/organizator/settings', icon: Settings },
+  // { name: 'Configuración', href: '/organizator/settings', icon: Settings },
 ]
 
 const userName = ref('Usuario')

@@ -7,6 +7,7 @@ import routes from './routes';
 import { errorMiddleware } from './middlewares/error.middleware';
 import { notFoundMiddleware } from './middlewares/notFound.middleware';
 import { globalLimiter } from './middlewares/rateLimiter.middleware';
+import { setupSwagger } from './config/swagger';
 
 const app = express();
 
@@ -26,6 +27,8 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use('/api', globalLimiter);
+
+setupSwagger(app);
 
 app.use(routes);
 
